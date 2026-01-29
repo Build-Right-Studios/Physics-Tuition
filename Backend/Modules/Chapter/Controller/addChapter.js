@@ -21,5 +21,4 @@ export const signup = async (req, res) => {
             message: error.message || "Failed to add Chapter.",
         });
     }
-
 }
