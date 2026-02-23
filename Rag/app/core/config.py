@@ -7,7 +7,10 @@ class Settings(BaseSettings):
     MATHPIX_APP_KEY: Optional[str] = ""
 
     OPENAI_API_KEY: Optional[str] = ""
-    
+
+    GROQ_API_KEY: Optional[str] = ""
+    DEV: bool = False
+
     QDRANT_URL: str = ""
     QDRANT_API_KEY: Optional[str] = None
 

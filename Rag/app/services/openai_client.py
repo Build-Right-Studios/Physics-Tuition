@@ -6,13 +6,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 class OpenAIClient:
-    
+
     def __init__(self):
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        if settings.DEV and settings.GROQ_API_KEY:
+            self.client = AsyncOpenAI(
+                api_key=settings.GROQ_API_KEY,
+                base_url="https://api.groq.com/openai/v1",
+            )
+            self.chat_model = "llama-3.3-70b-versatile"
+        else:
+            self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            self.chat_model = "gpt-4o-mini"
+
+        self._embedding_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
     
     async def create_embedding(self, text: str) -> list[float]:
         try:
-            response = await self.client.embeddings.create(
+            response = await self._embedding_client.embeddings.create(
                 model="text-embedding-3-small",
                 input=text
             )
@@ -38,7 +48,7 @@ class OpenAIClient:
             image_base64 = base64.b64encode(image_bytes).decode()
             
             response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=self.chat_model,
                 messages=[
                     {
                         "role": "user",
@@ -122,7 +132,7 @@ Respond ONLY in JSON:
 }}"""
             
             response = await self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=self.chat_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=200
             )
