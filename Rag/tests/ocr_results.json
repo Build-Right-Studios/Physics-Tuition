@@ -1,0 +1,42 @@
+{
+  "img1.jpeg": {
+    "status": "ok",
+    "text": "JEE Main 2023 (15 Apr Shift 1) A thermodynamic system is taken through cyclic process. The total work done in the process is :",
+    "latex": ""
+  },
+  "img2.jpeg": {
+    "status": "ok",
+    "text": "A thermodynamic system is taken from an original state A to an intermediate state B by a linear process as shown in the figure. Its volume is then reduced to the original value from B to C by an isobaric process. The total work done by the gas from A to B and B to C would be :",
+    "latex": ""
+  },
+  "img3.jpeg": {
+    "status": "ok",
+    "text": "JEE Main 2023 (31 Jan Shift 1) The correct relation between $\\gamma = \\frac{C_p}{C_V}$ and temperature $T$ is:",
+    "latex": "\\gamma = \\frac{C_p}{C_V}"
+  },
+  "img4.jpeg": {
+    "status": "ok",
+    "text": "A real gas within a closed chamber at $27^{\\circ}C$ undergoes the cyclic process as shown in figure. The gas obeys $PV^{3} = RT$ equation for the path $A$ to $B$. The net work done in the complete cycle is (assuming $R = 8 ,J / mol K)$:",
+    "latex": "PV^{3} = RT"
+  },
+  "img5.jpeg": {
+    "status": "ok",
+    "text": "Using the given P − V diagram, the work done by an ideal gas along the path ABCD is:",
+    "latex": "W = \\int P dV = P_0(V_0) + 2P_0(V_0) + 0 - P_0(V_0) = P_0V_0 + 2P_0V_0 - P_0V_0 = 2P_0V_0 =  P_0V_0"
+  },
+  "img6.jpeg": {
+    "status": "ok",
+    "text": "A sample of 1 mole gas at temperature T is adiabatically expanded to double its volume. If adiabatic constant for the gas is $\\gamma = \\frac{3}{2}$, then the work done by the gas in the process is:",
+    "latex": "\\frac{R}{T}[2-\\sqrt{2}]"
+  },
+  "img7.jpeg": {
+    "status": "ok",
+    "text": "A thermodynamic system is taken through the cyclic process $ABC$ as shown in the figure. The total work done by the system during the cycle $ABC$ is _____ J.",
+    "latex": ""
+  },
+  "img8.jpeg": {
+    "status": "ok",
+    "text": "In the following $p - V$ diagram the equation of state along the curved path is given by $(V - 2)^2 = 4ap$ where $a$ is a constant. The total work done in the closed path is",
+    "latex": "(V - 2)^2 = 4ap"
+  }
+}
