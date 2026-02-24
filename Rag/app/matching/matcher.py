@@ -1,6 +1,6 @@
 from app.matching.vector_matcher import VectorMatcher
 from app.matching.structural_matcher import StructuralMatcher
-from app.matching.llm_verifier import LLMVerfier
+from app.matching.llm_verifier import LLMVerifier
 from app.matching.scoring import SimilarityScorer
 from app.matching.thresholds import get_threshold
 from typing import List, Dict
@@ -12,7 +12,7 @@ class DuplicateMatcher:
     def __init__(self):
         self.vector_matcher = VectorMatcher()
         self.structural_matcher = StructuralMatcher()
-        self.llm_verifier = LLMVerfier()
+        self.llm_verifier = LLMVerifier()
         self.similarity_scorer = SimilarityScorer()
 
     async def find_duplicates(
@@ -53,7 +53,7 @@ class DuplicateMatcher:
         final_matches = []
 
         for candidate in structural_matches[:15]:
-            combined_score = self.scorer.combine_scores(
+            combined_score = self.similarity_scorer.combine_scores(
                 vector_score=candidate["similarity_score"],
                 sscores=candidate["sscore"],
                 subject=subject
