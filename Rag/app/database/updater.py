@@ -40,3 +40,17 @@ class DatabaseUpdater:
         logger.info(f"Added question {question_id} to {collection_name}")
 
         return question_id
+
+    async def delete_question (
+        self,
+        question_id: str,
+        source: str,
+        subject: str
+    ) -> bool:
+        collection_name = get_collection_name(source, subject)
+        success = await self.qdrant.delete(collection_name, question_id)
+
+        if success:
+            logger.info(f"delete {question_id} from {collection_name}")
+
+        return success
