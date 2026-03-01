@@ -1,28 +1,28 @@
 from openai import AsyncOpenAI
 from app.core.config import settings
 import base64
+import json
 import logging
 
 logger = logging.getLogger(__name__)
 
 class OpenAIClient:
-
+    """Handles both Groq (for OCR) and OpenAI (for vision) API calls"""
+    
     def __init__(self):
-        if settings.DEV and settings.GROQ_API_KEY:
-            self.client = AsyncOpenAI(
-                api_key=settings.GROQ_API_KEY,
-                base_url="https://api.groq.com/openai/v1",
-            )
-            self.chat_model = "llama-3.3-70b-versatile"
-        else:
-            self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            self.chat_model = "gpt-4o-mini"
-
-        self._embedding_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        self.groq_client = AsyncOpenAI(
+            api_key=settings.GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1"
+        )
+        
+        self.openai_client = AsyncOpenAI(
+            api_key=settings.OPENAI_API_KEY
+        )
     
     async def create_embedding(self, text: str) -> list[float]:
+        """Generate embedding for text using OpenAI"""
         try:
-            response = await self._embedding_client.embeddings.create(
+            response = await self.openai_client.embeddings.create(
                 model="text-embedding-3-small",
                 input=text
             )
@@ -35,49 +35,34 @@ class OpenAIClient:
     
     async def analyze_image(self, image_bytes: bytes) -> dict:
         """
-        Analyze image for diagrams/circuits
+        Analyze image for diagrams/circuits using OpenAI Vision
         
-        Returns:
-        {
-            "description": "Circuit with 2 resistors...",
-            "has_diagram": true,
-            "circuit_topology": "series_2_resistors_1_battery"
-        }
         """
         try:
             image_base64 = base64.b64encode(image_bytes).decode()
             
-            response = await self.client.chat.completions.create(
-                model=self.chat_model,
+            response = await self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",  # OpenAI vision model
                 messages=[
                     {
                         "role": "user",
                         "content": [
                             {
                                 "type": "text",
-                                "text": """Analyze this exam question image.
+                                "text": """Analyze this JEE/NEET question image:
 
-Your task is to identify and describe any visual content present.
+1. Is there a diagram/circuit/graph? (yes/no)
+2. If yes, describe it in detail:
+   - For circuits: list components, describe topology (series/parallel)
+   - For physics: describe the setup (inclined plane, pulley, etc.)
+   - For graphs: describe axes and curves
 
-1. Is there any diagram, figure, graph, structure, or illustration? (yes/no)
-
-2. If yes, describe it in a subject-agnostic way:
-   - For circuits: components and topology
-   - For graphs: axes, curves, relationships
-   - For geometry: shapes, dimensions, relations
-   - For chemistry: molecules, bonds, reaction setups
-   - For biology: organs, cells, labeled structures
-   - For physics setups: forces, motion, constraints
-
-3. Do NOT rewrite question text or equations.
-4. Focus only on what is visually present.
-
-Return ONLY valid JSON in this format:
+3. Return ONLY valid JSON (no markdown, no extra text):
 {
-  "has_diagram": true/false,
-  "diagram_type": "circuit/graph/geometry/chemistry/biology/physics_setup/none",
-  "description": "clear structural description",
-  "topology_or_structure": "concise normalized identifier if applicable"
+    "has_diagram": true/false,
+    "description": "detailed description",
+    "circuit_topology": "series_2_resistors_1_battery" (if circuit, otherwise null),
+    "diagram_type": "circuit/physics_setup/graph/none"
 }"""
                             },
                             {
@@ -92,11 +77,31 @@ Return ONLY valid JSON in this format:
                 max_tokens=500
             )
             
-            import json
             content = response.choices[0].message.content
             
-            # Parse JSON from response
-            result = json.loads(content)
+            try:
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                
+                result = json.loads(content)
+                
+                if "has_diagram" not in result:
+                    result["has_diagram"] = False
+                if "description" not in result:
+                    result["description"] = "No description provided"
+                if "diagram_type" not in result:
+                    result["diagram_type"] = "none"
+                
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse JSON response: {e}")
+                result = {
+                    "has_diagram": False,
+                    "description": content,
+                    "circuit_topology": None,
+                    "diagram_type": "none"
+                }
             
             logger.info("Vision analysis successful")
             return result
@@ -106,17 +111,21 @@ Return ONLY valid JSON in this format:
             raise
     
     async def verify_duplicate(self, q1: dict, q2: dict) -> dict:
+        """
+        LLM verification for duplicate detection using Groq
+        (Text-only, no images, so Groq works fine)
+        """
         try:
             prompt = f"""Compare these two JEE questions:
 
 Question 1:
-LaTeX: {q1['latex']}
-Text: {q1['text']}
+LaTeX: {q1.get('latex', 'N/A')}
+Text: {q1.get('text', 'N/A')}
 Diagram: {q1.get('diagram_description', 'None')}
 
 Question 2:
-LaTeX: {q2['latex']}
-Text: {q2['text']}
+LaTeX: {q2.get('latex', 'N/A')}
+Text: {q2.get('text', 'N/A')}
 Diagram: {q2.get('diagram_description', 'None')}
 
 Are these duplicates? Consider:
@@ -124,21 +133,37 @@ Are these duplicates? Consider:
 2. Same numerical values
 3. Same diagram topology
 
-Respond ONLY in JSON:
+Respond ONLY in valid JSON (no markdown):
 {{
     "is_duplicate": true/false,
     "confidence": "high/medium/low",
     "reason": "brief explanation"
 }}"""
             
-            response = await self.client.chat.completions.create(
-                model=self.chat_model,
+            response = await self.groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile", 
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=200
+                max_tokens=200,
+                temperature=0.1
             )
             
-            import json
-            return json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            
+            try:
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                
+                result = json.loads(content)
+            except json.JSONDecodeError:
+                result = {
+                    "is_duplicate": False,
+                    "confidence": "low",
+                    "reason": "Failed to parse LLM response"
+                }
+            
+            return result
             
         except Exception as e:
             logger.error(f"LLM verification error: {str(e)}")
