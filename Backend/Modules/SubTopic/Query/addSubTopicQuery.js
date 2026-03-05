@@ -3,9 +3,8 @@ import Chapter from "../../../MongoDb/Chapter.js";
 
 export const getSubTopicQuery = async (userData) => {
     try {
-        const {chapterName, titleName} = userData;
-        const existingSubTopic = await SubTopic.findOne({chapterName, titleName});
-
+        const {chapterName, topicName} = userData;
+        const existingSubTopic = await SubTopic.findOne({chapterName, topicName});
         return existingSubTopic;
     } catch (error) {
         console.error("Error in getSubTopicQuery:", error);
@@ -17,7 +16,6 @@ export const getChapterQuery = async (userData) => {
     try {
         const {chapterName} = userData;
         const existingChapter = await Chapter.findOne({chapterName});
-
         return existingChapter;
     } catch (error) {
         console.error("Error in getChapterQuery:", error);
@@ -30,7 +28,6 @@ export const addSubTopicQuery = async (userData) => {
         const { id, chapterId, chapterName, topicName, order } = userData;
         const newSubTopic = new SubTopic({_id: id, chapterId, chapterName, topicName, order });
         const savedSubTopic = await newSubTopic.save();
-
         return savedSubTopic.toObject();
     } catch (error) {
         console.error("Error in addSubTopicQuery:", error);

@@ -2,22 +2,22 @@ import { getChapterQuery, addChapterQuery } from "../Query/addChapterQuery.js"
 
 export const getChapterInternal = async (userData) => {
     try {
-        const {grade, subject, chapterNo, chapterName} = userData;
-        const existingChapter = await getChapterQuery({grade, subject, chapterNo, chapterName})
+        const {grade, subject, chapterNumber, chapterName} = userData;
+        const existingChapter = await getChapterQuery({grade, subject, chapterNumber, chapterName})
         return existingChapter;
     } catch (error) {
         console.error("Error in getChapterInternal:", error);
-        throw new Error("Failed to get Chapters.")
+        throw error;
     }
 }
 
 export const addChapterInternal = async (userData) => {
     try {
-        const {id, grade, subject, chapterNo, chapterName, slug} = userData;
-        const newChapter = await addChapterQuery({id, grade, subject, chapterNo, chapterName, slug})
+        const {id, grade, subject, chapterNumber, chapterName, slug} = userData;
+        const newChapter = await addChapterQuery({id, grade, subject, chapterNumber, chapterName, slug})
         return newChapter;
     } catch (error) {
         console.error("Error in addChapterInternal:", error);
-        throw new Error("Failed to add Chapter.")
+        throw error;
     }
 }

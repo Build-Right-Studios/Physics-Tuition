@@ -4,23 +4,23 @@ import { generateChapterId } from "../Utils/generateChapterId.js";
 
 export const addChapterService = async (userData) => {
     try {
-        const { grade, subject, chapterNo, chapterName } = userData;
+        const { grade, subject, chapterNumber, chapterName } = userData;
 
         //Check Existing Chapter
-        const existingChapter = await getChapterInternal({grade, subject, chapterNo, chapterName});
+        const existingChapter = await getChapterInternal({grade, subject, chapterNumber, chapterName});
         if(existingChapter) {
-            throw { status: 500, message: "Chapter Already exists"};
+            throw { status: 409, message: "Chapter Already exists"};
         }
 
         //Add new Chapter
-        const id = generateChapterId({grade, subject, chapterNo});
+        const id = generateChapterId({grade, subject, chapterNumber});
         const slug = generateSlug(chapterName);
 
-        const newChapter = await addChapterInternal({id, grade, subject, chapterNo, chapterName, slug});
+        const newChapter = await addChapterInternal({id, grade, subject, chapterNumber, chapterName, slug});
 
         return newChapter;
     } catch (error) {
         console.error("Error in addChapterService:", error);
-        throw new Error("Failed to add Chapter.")
+        throw error;
     }
 }

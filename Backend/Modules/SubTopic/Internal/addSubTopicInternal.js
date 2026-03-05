@@ -2,12 +2,12 @@ import { getSubTopicQuery, getChapterQuery, addSubTopicQuery } from "../Query/ad
 
 export const getSubTopicInternal = async (userData) => {
     try {
-        const {chapterName, titleName} = userData;
-        const existingSubTopic = await getSubTopicQuery({chapterName, titleName});
+        const {chapterName, topicName} = userData;
+        const existingSubTopic = await getSubTopicQuery({chapterName, topicName});
         return existingSubTopic;
     } catch (error) {
         console.error("Error in getSubTopicInternal:", error);
-        throw new Error("Failed to get Sub Topics.")
+        throw error;
     }
 }
 
@@ -18,7 +18,7 @@ export const getChapterInternal = async (userData) => {
         return existingChapter;
     } catch (error) {
         console.error("Error in getChapterInternal:", error);
-        throw new Error("Failed to get Chapter.")
+        throw error;
     }
 }
 
@@ -29,6 +29,6 @@ export const addSubTopicInternal = async (userData) => {
         return newSubTopic;
     } catch (error) {
         console.error("Error in addSubTopicInternal:", error);
-        throw new Error("Failed to add Sub Topic.")
+        throw error;
     }
 }

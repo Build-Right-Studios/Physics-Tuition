@@ -9,22 +9,25 @@ export const addSubTopicService = async (userData) => {
         //Check Existing Sub Topic
         const existingSubTopic = await getSubTopicInternal({ chapterName, topicName });
         if (existingSubTopic) {
-            throw { status: 500, message: "Sub Topic Already exists" };
+            throw { status: 404, message: "Sub Topic Already exists" };
         }
 
         //Add new Sub Topic
         const existingChapter = await getChapterInternal({ chapterName });
+        if (!existingChapter) {
+            throw { status: 404, message: "Chapter does not exist" };
+        }
         const { id, order } = await generateSubTopicId({
             chapterId: existingChapter._id,
             CounterModel: Counter
         });
         const chapterId = existingChapter._id
 
-        const newChapter = await addSubTopicInternal({ id, chapterId, chapterName, topicName, order });
+        const newSubTopic = await addSubTopicInternal({ id, chapterId, chapterName, topicName, order });
 
-        return newChapter;
+        return newSubTopic;
     } catch (error) {
-        console.error("Error in addChapterService:", error);
-        throw new Error("Failed to add Chapter.")
+        console.error("Error in addSubTopicService:", error);
+        throw error;
     }
 }

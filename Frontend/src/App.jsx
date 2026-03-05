@@ -1,35 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./Pages/LoginPage.jsx";
+import DashboardPage from "./Pages/DashboardPage.jsx";
+import QuestionsPage from "./Pages/Questionspage.jsx";
+import ProtectedLayout from "./Components/Layout/ProtectedLayout.jsx";
+import AddChapterPage from "./Pages/AddChapterPage.jsx";
+import CreateSubTopic from "./Pages/CreateSubTopic.jsx";
+import AddStudentPage from "./Pages/AddStudentPage.jsx";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite & React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/login" replace />;
 }
 
-export default App
+function App() {
+  return (
+    <>
+      <BrowserRouter>
+        <Routes>
+
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* Protected Routes — all share the global navbar via ProtectedLayout */}
+        <Route element={<ProtectedLayout />}>
+          <Route path="/dashboard"         element={<DashboardPage />} />
+          <Route path="/questions/:exam"   element={<QuestionsPage />} />
+          <Route path="/chapters/add"      element={<AddChapterPage />} />
+          <Route path="/subtopics/add"      element={<CreateSubTopic />} />
+          <Route path="/students/add"      element={<AddStudentPage />} />
+
+          {/* 🔧 Add new routes here as pages are built */}
+          {/* <Route path="/subtopics/add"         element={<AddSubTopicPage />} /> */}
+          {/* <Route path="/students/add"          element={<AddStudentPage />} /> */}
+          {/* <Route path="/assignments/generate"  element={<GenerateAssignmentPage />} /> */}
+        </Route>
+
+        {/* 404 Fallback */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
+      </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
+export default App;

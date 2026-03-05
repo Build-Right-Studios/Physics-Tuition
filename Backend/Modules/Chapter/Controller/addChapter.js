@@ -1,14 +1,14 @@
 import { addChapterService } from "../Service/addChapterService.js"
 
-export const signup = async (req, res) => {
+export const addChapter = async (req, res) => {
     try {
-        const { grade, subject, chapterNo, chapterName } = req.body;
+        const { grade, subject, chapterNumber, chapterName } = req.body;
         if (!grade) { throw { status: 400, message: "Grade is missing." };}
         if (!subject) { throw { status: 400, message: "Subject is missing." };}
-        if (!chapterNo) { throw { status: 400, message: "Chapter Number is missing." };}
+        if (!chapterNumber) { throw { status: 400, message: "Chapter Number is missing." };}
         if (!chapterName) { throw { status: 400, message: "Chapter Name is missing." };}
 
-        const data = await addChapterService({ grade, subject, chapterNo, chapterName });
+        const data = await addChapterService({ grade, subject, chapterNumber, chapterName });
 
         return res.status(200).json({
             success: true,

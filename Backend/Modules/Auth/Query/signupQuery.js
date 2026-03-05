@@ -8,7 +8,7 @@ export const signupQuery = async (userData) => {
 
         return savedUser.toObject();
     } catch (error) {
-        console.error("Error in signupInternal:", error);
+        console.error("Error in signupQuery:", error);
         throw new Error("Error in signup:")
     }
 }

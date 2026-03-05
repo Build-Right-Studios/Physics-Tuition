@@ -1,6 +1,6 @@
 import { addSubTopicService } from "../Service/addSubTopicService.js"
 
-export const addSubTopicService = async (req, res) => {
+export const addSubTopic = async (req, res) => {
     try {
         const { chapterName, topicName } = req.body;
         if (!chapterName) { throw { status: 400, message: "Chapter Name is missing." };}
@@ -13,7 +13,7 @@ export const addSubTopicService = async (req, res) => {
             data
         })
     } catch (error) {
-        console.error("Error in addSubTopicService:", error);
+        console.error("Error in addSubTopic:", error);
         return res.status(error.status || 500).json({
             success: false,
             message: error.message || "Failed to add Sub Topic.",
