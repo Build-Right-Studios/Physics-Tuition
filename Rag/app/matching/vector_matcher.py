@@ -16,12 +16,18 @@ class VectorMatcher:
         logger.info(f"Vector search: subject={subject}, top_k={top_k}")
         
         
-        results = self.qdrant.search(
-            collection_name=collection_name,
-            query_vector=embedding,
-            top_k=top_k,
-            year=year,
-        )
-        
-        logger.info(f"Found {len(results)} candidates")
-        return results
+        try:
+            results = self.qdrant.search(
+                collection_name=collection_name,
+                query_vector=embedding,
+                top_k=top_k,
+                year=year,
+            )
+            logger.info(f"Found {len(results)} candidates")
+            return results
+        except Exception as e:
+            if "Not found: Collection" in str(e):
+                logger.warning(f"Collection {collection_name} does not exist yet. Returning 0 candidates.")
+                return []
+            logger.error(f"Vector search error: {e}")
+            raise

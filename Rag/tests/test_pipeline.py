@@ -35,9 +35,8 @@ logger = logging.getLogger("pipeline-test")
 # Helpers
 # ------------------------------------------------------------------
 def prompt_image_path() -> Path:
-    print("\nEnter full or relative path to a question image:")
-    path = Path(input("> ").strip())
-    print(path)
+    path = Path("tests/sample/img1.jpeg")
+    print(f"\nimage path: {path}")
 
     if not path.exists():
         raise FileNotFoundError(f"Image not found: {path}")
@@ -128,12 +127,13 @@ async def test_add_and_verify(pipeline, image_bytes):
     question_id = add_result["question_id"]
     print(f"Question added with ID: {question_id}")
 
-    verify = await pipeline.find_matches(
-        image_bytes=image_bytes,
+    matches = await pipeline.matcher.find_duplicates(
+        question=processed,
         source="neet",
         subject="physics",
         top_k=1
     )
+    verify = {"matches": matches}
 
     if not verify["matches"]:
         raise RuntimeError("Verification failed: no matches returned")

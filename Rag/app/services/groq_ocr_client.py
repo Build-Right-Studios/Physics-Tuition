@@ -47,6 +47,7 @@ class GroqOCRClient:
                     }
                 ],
                 max_tokens=512,
+                temperature=0.0,
             )
 
             raw = response.choices[0].message.content

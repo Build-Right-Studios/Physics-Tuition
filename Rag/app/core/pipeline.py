@@ -5,7 +5,7 @@ from app.processing.embedder import Embedder
 from app.matching.matcher import DuplicateMatcher
 from app.database.operations import DatabaseOperations
 from app.database.updater import DatabaseUpdater
-from app.utils.validators import get_collection_name
+from app.utils.validators import get_collection_name, validate_source, validate_subject
 from typing import List, Dict
 import logging
 
@@ -28,6 +28,8 @@ class RAGPipeline:
         subject: str
     ) -> Dict:
         """for processing image and converting it into structural data"""
+        validate_source(source)
+        validate_subject(subject, source)
         logger.info(f"processing question: {source}/{subject}")
 
         ocr_result = await self.ocr.process(image_bytes)
@@ -36,7 +38,7 @@ class RAGPipeline:
         normalized = self.normalizer.normalize(
             latex = ocr_result["latex"],
             text = ocr_result["text"],
-            diagram = vision_result["diagram"]
+            diagram = vision_result.get("description", "")
         )
 
         embedding = await self.embedder.generate(normalized["searchable_text"])
@@ -71,7 +73,7 @@ class RAGPipeline:
     ) -> Dict:
         processed = await self.process_questions(image_bytes, source, subject)
         matches = await self.matcher.find_duplicates(
-            processed_question=processed,
+            question=processed,
             source=source,
             subject=subject,
             year=year,

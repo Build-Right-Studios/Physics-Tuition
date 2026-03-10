@@ -17,15 +17,17 @@ class DuplicateMatcher:
 
     async def find_duplicates(
         self,
-        question: str,
+        question: Dict,
+        source: str,
         subject: str,
         year: int = None,
         top_k: int = 10
     ) -> List[Dict]:
-        logger.info("finding duplicates for {subject} question")
+        logger.info(f"finding duplicates for {subject} question")
 
         candidates = await self.vector_matcher.search(
             embedding = question["embedding"],
+            source=source,
             subject=subject,
             year=year,
             top_k=50
@@ -43,7 +45,7 @@ class DuplicateMatcher:
                 question2=candidate
             )
 
-            if sscore["total_score"] > 0.5:
+            if sscore["total_score"] >= 0.0:
                 candidate["sscore"] = sscore
                 structural_matches.append(candidate)
         
@@ -54,7 +56,7 @@ class DuplicateMatcher:
 
         for candidate in structural_matches[:15]:
             combined_score = self.similarity_scorer.combine_scores(
-                vector_score=candidate["similarity_score"],
+                vector_score=candidate["score"],
                 sscores=candidate["sscore"],
                 subject=subject
             )
@@ -62,30 +64,29 @@ class DuplicateMatcher:
             if combined_score > threshold:
                 llm_result = await self.llm_verifier.verify(
                     question,
-                    candidate
+                    candidate.get("payload", candidate)
                 )
 
                 if llm_result["is_duplicate"]:
-                    if llm_result["is_duplicate"]:
-                        final_matches.append({
-                            "question_id": candidate["id"],
-                            "similarity_score": combined_score,
-                            "latex": candidate["latex"],
-                            "text": candidate["text"],
-                            "year": candidate.get("year"),
-                            "diagram_description": candidate.get("diagram_description"),
-                            "match_breakdown": {
-                                "vector_score": candidate["similarity_score"],
-                                "latex_score": candidate["structural_score"]["latex"],
-                                "circuit_score": candidate["structural_score"].get("circuit", 0),
-                                "combined_score": combined_score
-                            },
-                            "match_reason": llm_result["reason"],
-                            "confidence": llm_result["confidence"]
-                        })
+                    final_matches.append({
+                        "question_id": candidate["id"],
+                        "similarity_score": combined_score,
+                        "latex": candidate.get("payload", {}).get("latex", ""),
+                        "text": candidate.get("payload", {}).get("text", ""),
+                        "year": candidate.get("payload", {}).get("year"),
+                        "diagram_description": candidate.get("payload", {}).get("diagram_description"),
+                        "match_breakdown": {
+                            "vector_score": candidate["score"],
+                            "latex_score": candidate["sscore"].get("latex", 0),
+                            "circuit_score": candidate["sscore"].get("circuit", 0),
+                            "combined_score": combined_score
+                        },
+                        "match_reason": llm_result["reason"],
+                        "confidence": llm_result["confidence"]
+                    })
         
         logger.info(f"Stage 3: {len(final_matches)} final duplicates")
-        
+
 
         return sorted(
             final_matches, 

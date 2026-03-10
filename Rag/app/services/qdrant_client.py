@@ -28,7 +28,7 @@ class QdrantService:
 
         self.client.create_collection(
             collection_name=collection_name,
-            vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
+            vectors_config=VectorParams(size=getattr(settings, "VECTOR_SIZE", 1536), distance=Distance.COSINE),
         )
         logger.info(f"Created collection: {collection_name}")
         return True
@@ -37,6 +37,7 @@ class QdrantService:
         self.client.upsert(
             collection_name=collection_name,
             points=[PointStruct(id=point_id, vector=vector, payload=payload)],
+            wait=True,
         )
 
     def search(

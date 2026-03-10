@@ -9,23 +9,31 @@ class StructuralMatcher:
         Returns scores for different aspects
         """
         scores = {}
+
+        q1_latex = question1.get("latex", "")
+        q2_latex = question2.get("payload", {}).get("latex", question2.get("latex", ""))
+
+        scores["latex"] = compare_latex_structure(q1_latex, q2_latex)
+
+        q1_circuit = question1.get("circuit_topology")
+        q2_circuit = question2.get("payload", {}).get("circuit_topology", question2.get("circuit_topology"))
+
+        if q1_circuit or q2_circuit:
+            if q1_circuit and q2_circuit:
+                scores["circuit"] = self._compare_circuits(q1_circuit, q2_circuit)
+            else:
+                scores["circuit"] = 0.0
         
-        scores["latex"] = compare_latex_structure(
-            question1["latex"],
-            question2["latex"]
-        )
+        q1_concept = question1.get("concept")
+        q2_concept = question2.get("payload", {}).get("concept", question2.get("concept"))
+
+        if q1_concept or q2_concept:
+            if q1_concept and q2_concept:
+                scores["concept"] = 1.0 if q1_concept == q2_concept else 0.0
+            else:
+                scores["concept"] = 0.0
         
-        if question1.get("circuit_topology") and question2.get("circuit_topology"):
-            scores["circuit"] = self._compare_circuits(
-                question1["circuit_topology"],
-                question2["circuit_topology"]
-            )
-        
-        if question1.get("concept") and question2.get("concept"):
-            scores["concept"] = 1.0 if question1["concept"] == question2["concept"] else 0.0
-        
-        scores["total_score"] = sum(scores.values()) / len(scores)  # LATER WE ALSO CAN ADD WEIGHTED AVG DEPENDING UPON THE IMPORTANCE OF DIFFERENT ASPECTS FOR DIFFERENT SUBJECTS (E.G. FOR PHYSICS CIRCUIT TOPOLOGY MAY BE MORE IMPORTANT THAN FOR CHEMISTRY)
-        
+        scores["total_score"] = sum(scores.values()) / max(len(scores), 1)
         return scores
     
     def _compare_circuits(self, circuit1: str, circuit2: str) -> float:

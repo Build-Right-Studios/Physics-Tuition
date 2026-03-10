@@ -35,7 +35,19 @@ DEFAULT_WEIGHTS = {
 class SimilarityScorer:
 
     def combine_scores(self, vector_score: float, sscores: dict, subject: str) -> float:
-        w = WEIGHTS.get(subject.lower(), DEFAULT_WEIGHTS)
+        w = WEIGHTS.get(subject.lower(), DEFAULT_WEIGHTS).copy()
+
+        if "circuit" not in sscores:
+            extra = w["circuit"]
+            w["circuit"] = 0.0
+            w["vector"] += extra / 2
+            w["latex"] += extra / 2
+            
+        if "concept" not in sscores:
+            extra = w["concept"]
+            w["concept"] = 0.0
+            w["vector"] += extra / 2
+            w["latex"] += extra / 2
 
         score = (
             w["vector"]  * vector_score

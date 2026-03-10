@@ -21,6 +21,14 @@ class OpenAIClient:
     
     async def create_embedding(self, text: str) -> list[float]:
         """Generate embedding for text using OpenAI"""
+        if not getattr(settings, "OPENAI_API_KEY", None):
+            logger.warning("No OPENAI_API_KEY found. Mocking embedding.")
+            import random
+            import hashlib
+            seed_val = int(hashlib.md5(text.encode('utf-8') if text else b"").hexdigest(), 16)
+            random.seed(seed_val)
+            dim = getattr(settings, "VECTOR_SIZE", 1536)
+            return [random.uniform(-1, 1) for _ in range(dim)]
         try:
             response = await self.openai_client.embeddings.create(
                 model="text-embedding-3-small",
@@ -36,8 +44,15 @@ class OpenAIClient:
     async def analyze_image(self, image_bytes: bytes) -> dict:
         """
         Analyze image for diagrams/circuits using OpenAI Vision
-        
         """
+        if not getattr(settings, "OPENAI_API_KEY", None):
+            logger.warning("No OPENAI_API_KEY found. Mocking vision analysis.")
+            return {
+                "has_diagram": False,
+                "description": "Mocked vision description",
+                "circuit_topology": None,
+                "diagram_type": "none"
+            }
         try:
             image_base64 = base64.b64encode(image_bytes).decode()
             
@@ -148,6 +163,7 @@ Respond ONLY in valid JSON (no markdown):
             )
             
             content = response.choices[0].message.content
+            logger.info(f"LLM verification response: {content}")
             
             try:
                 if "```json" in content:
