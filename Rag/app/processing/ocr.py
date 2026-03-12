@@ -6,21 +6,21 @@ logger = logging.getLogger(__name__)
 
 class OCRHandler:
     def __init__(self):
-        if settings.DEV and settings.GROQ_API_KEY:   # using groq for now as mathpix api not available
+        if settings.DEV and getattr(settings, "GROQ_API_KEY", None):
             from app.services.groq_ocr_client import GroqOCRClient
             self.backend = GroqOCRClient()
             logger.info("OCR: using Groq vision (DEV mode)")
             return
 
-        if settings.MATHPIX_APP_KEY and settings.MATHPIX_APP_ID:
-            from app.services.mathpix_client import MathpixClient
-            self.backend = MathpixClient()
-            logger.info("OCR: using Mathpix (production)")
+        if getattr(settings, "OPENAI_API_KEY", None):
+            from app.services.openai_client import OpenAIClient
+            self.backend = OpenAIClient()
+            logger.info("OCR: using OpenAI fallback (production)")
             return
 
         raise RuntimeError(
             "No OCR backend configured. "
-            "Set GROQ_API_KEY (DEV) or MATHPIX_URL + MATHPIX_APP_ID."
+            "Set GROQ_API_KEY (DEV) or OPENAI_API_KEY (production)."
         )
 
     async def process(self, image_bytes: bytes) -> dict:

@@ -65,7 +65,7 @@ async def test_process_question(pipeline, image_bytes):
     print_section("TEST 1: PROCESS QUESTION")
 
     result = await pipeline.process_questions(
-        image_bytes=image_bytes,
+        text_image_bytes=image_bytes,
         source="neet",
         subject="physics"
     )
@@ -88,7 +88,7 @@ async def test_find_matches(pipeline, image_bytes):
     print_section("TEST 2: FIND MATCHES")
 
     result = await pipeline.find_matches(
-        image_bytes=image_bytes,
+        text_image_bytes=image_bytes,
         source="neet",
         subject="physics",
         year=None,
@@ -112,7 +112,7 @@ async def test_add_and_verify(pipeline, image_bytes):
     print_section("TEST 3: ADD, VERIFY, DELETE QUESTION")
 
     processed = await pipeline.process_questions(
-        image_bytes=image_bytes,
+        text_image_bytes=image_bytes,
         source="neet",
         subject="physics"
     )
@@ -163,7 +163,7 @@ async def test_validation_errors(pipeline, image_bytes):
 
     try:
         await pipeline.process_questions(
-            image_bytes=image_bytes,
+            text_image_bytes=image_bytes,
             source="invalid_source",
             subject="physics"
         )
@@ -173,7 +173,7 @@ async def test_validation_errors(pipeline, image_bytes):
 
     try:
         await pipeline.process_questions(
-            image_bytes=image_bytes,
+            text_image_bytes=image_bytes,
             source="jee_mains",
             subject="biology"
         )

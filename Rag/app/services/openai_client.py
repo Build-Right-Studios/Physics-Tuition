@@ -32,7 +32,8 @@ class OpenAIClient:
         try:
             response = await self.openai_client.embeddings.create(
                 model="text-embedding-3-small",
-                input=text
+                input=text,
+                dimensions=getattr(settings, "VECTOR_SIZE", 768)
             )
             
             return response.data[0].embedding
@@ -124,6 +125,62 @@ class OpenAIClient:
         except Exception as e:
             logger.error(f"Vision error: {str(e)}")
             raise
+            
+    async def process_image(self, image_bytes: bytes) -> dict:
+        """OCR fallback using OpenAI when DEV=False """
+        if not getattr(settings, "OPENAI_API_KEY", None):
+            logger.warning("No OPENAI_API_KEY found. Mocking OCR fallback.")
+            return {"text": "mock OCR text", "latex": ""}
+            
+        try:
+            image_base64 = base64.b64encode(image_bytes).decode()
+            prompt = """You are an expert physics/maths OCR engine.
+Extract all text and LaTeX from this exam question image.
+
+Respond ONLY in JSON:
+{
+    "text": "plain english text of the question",
+    "latex": "full latex representation of any math/equations (empty string if none)"
+}"""
+            
+            response = await self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=512,
+                temperature=0.0
+            )
+            
+            content = response.choices[0].message.content.strip()
+            
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+                
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError:
+                result = {"text": content, "latex": ""}
+                
+            return {
+                "text": result.get("text", ""),
+                "latex": result.get("latex", "")
+            }
+            
+        except Exception as e:
+            logger.error(f"OpenAI OCR error: {str(e)}")
+            raise
     
     async def verify_duplicate(self, q1: dict, q2: dict) -> dict:
         """
@@ -155,12 +212,20 @@ Respond ONLY in valid JSON (no markdown):
     "reason": "brief explanation"
 }}"""
             
-            response = await self.groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile", 
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=200,
-                temperature=0.1
-            )
+            if not settings.DEV:
+                response = await self.openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200,
+                    temperature=0.1
+                )
+            else:
+                response = await self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile", 
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200,
+                    temperature=0.1
+                )
             
             content = response.choices[0].message.content
             logger.info(f"LLM verification response: {content}")

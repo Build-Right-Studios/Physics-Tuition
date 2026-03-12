@@ -3,8 +3,8 @@ from typing import Optional, List
 
 class Settings(BaseSettings):
 
-    MATHPIX_APP_ID: Optional[str] = ""
-    MATHPIX_APP_KEY: Optional[str] = ""
+    # MATHPIX_APP_ID: Optional[str] = ""
+    # MATHPIX_APP_KEY: Optional[str] = ""
 
     OPENAI_API_KEY: Optional[str] = ""
 
