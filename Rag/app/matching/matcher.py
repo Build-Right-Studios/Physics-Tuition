@@ -29,8 +29,8 @@ class DuplicateMatcher:
             embedding = question["embedding"],
             source=source,
             subject=subject,
-            year=year,
-            top_k=50
+            # year=year,
+            top_k=10
         )
 
         logger.info(f"Stage 1: Found {len(candidates)} vector candidates")

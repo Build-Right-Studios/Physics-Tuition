@@ -21,7 +21,7 @@ class VectorMatcher:
                 collection_name=collection_name,
                 query_vector=embedding,
                 top_k=top_k,
-                year=year,
+                # year=year,
             )
             logger.info(f"Found {len(results)} candidates")
             return results
