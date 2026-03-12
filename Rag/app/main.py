@@ -17,16 +17,45 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 pipeline = RAGPipeline()
 
+from typing import Optional
 
 @app.post("/process", response_model=ProcessedQuestion)
 async def process_question(
-    image: UploadFile = File(...),
+    text_image: UploadFile = File(...),
+    diagram_image: Optional[UploadFile] = File(None),
     source: str = Form(...),
     subject: str = Form(...),
+    special_note: Optional[str] = Form(None),
+    class_name: Optional[str] = Form(None, alias="class"),
+    chapter: Optional[str] = Form(None),
+    subtopic: Optional[str] = Form(None),
+    difficulty: Optional[str] = Form(None),
+    exam_tags: Optional[str] = Form(None),
+    appearances: Optional[str] = Form(None),
 ):
     try:
-        image_bytes = await image.read()
-        return await pipeline.process_questions(image_bytes, source, subject)
+        text_image_bytes = await text_image.read()
+        diagram_image_bytes = await diagram_image.read() if diagram_image else None
+        
+        metadata_update = {
+            "special_note": special_note,
+            "class": class_name,
+            "chapter": chapter,
+            "subtopic": subtopic,
+            "difficulty": difficulty,
+            "exam_tags": exam_tags,
+            "appearances": appearances
+        }
+        
+        result = await pipeline.process_questions(
+            text_image_bytes=text_image_bytes,
+            diagram_image_bytes=diagram_image_bytes,
+            source=source,
+            subject=subject,
+            metadata_update=metadata_update
+        )
+        
+        return result
     except ValidationError as e:
         raise HTTPException(422, detail=str(e))
     except Exception as e:
@@ -36,15 +65,43 @@ async def process_question(
 
 @app.post("/match", response_model=MatchResponse)
 async def find_matches(
-    image: UploadFile = File(...),
+    text_image: UploadFile = File(...),
+    diagram_image: Optional[UploadFile] = File(None),
     source: str = Form(...),
     subject: str = Form(...),
-    year: int = Form(None),
+    year: Optional[int] = Form(None),
     top_k: int = Form(10, ge=1, le=50),
+    special_note: Optional[str] = Form(None),
+    class_name: Optional[str] = Form(None, alias="class"),
+    chapter: Optional[str] = Form(None),
+    subtopic: Optional[str] = Form(None),
+    difficulty: Optional[str] = Form(None),
+    exam_tags: Optional[str] = Form(None),
+    appearances: Optional[str] = Form(None),
 ):
     try:
-        image_bytes = await image.read()
-        result = await pipeline.find_matches(image_bytes, source, subject, year, top_k)
+        text_image_bytes = await text_image.read()
+        diagram_image_bytes = await diagram_image.read() if diagram_image else None
+        
+        metadata_update = {
+            "special_note": special_note,
+            "class": class_name,
+            "chapter": chapter,
+            "subtopic": subtopic,
+            "difficulty": difficulty,
+            "exam_tags": exam_tags,
+            "appearances": appearances
+        }
+
+        result = await pipeline.find_matches(
+            text_image_bytes=text_image_bytes,
+            diagram_image_bytes=diagram_image_bytes,
+            source=source,
+            subject=subject,
+            year=year,
+            top_k=top_k,
+            metadata_update=metadata_update
+        )
 
         matches = [
             Match(

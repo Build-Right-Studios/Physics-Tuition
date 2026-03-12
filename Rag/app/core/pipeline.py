@@ -23,17 +23,21 @@ class RAGPipeline:
 
     async def process_questions(
         self,
-        image_bytes: bytes,
-        source: str,
-        subject: str
+        text_image_bytes: bytes,
+        diagram_image_bytes: bytes = None,
+        source: str = "",
+        subject: str = "",
+        metadata_update: dict = None
     ) -> Dict:
         """for processing image and converting it into structural data"""
         validate_source(source)
         validate_subject(subject, source)
         logger.info(f"processing question: {source}/{subject}")
 
-        ocr_result = await self.ocr.process(image_bytes)
-        vision_result = await self.vision.analyze(image_bytes)
+        ocr_result = await self.ocr.process(text_image_bytes)
+        
+        vision_bytes = diagram_image_bytes if diagram_image_bytes else text_image_bytes
+        vision_result = await self.vision.analyze(vision_bytes)
 
         normalized = self.normalizer.normalize(
             latex = ocr_result["latex"],
@@ -55,23 +59,29 @@ class RAGPipeline:
             "metadata": {
                 "source": source,
                 "subject": subject,
-                "has_diagram": vision_result["has_diagram"],
+                "has_diagram": bool(diagram_image_bytes) or vision_result["has_diagram"],
                 "math_entities": normalized.get("math_entities", [])
             }
         }
+        
+        if metadata_update:
+            filtered_metadata_update = {k: v for k, v in metadata_update.items() if v is not None}
+            processed["metadata"].update(filtered_metadata_update)
 
         logger.info("question processed")
         return processed
     
     async def find_matches(
         self,
-        image_bytes: bytes,
-        source: str,
-        subject: str,
+        text_image_bytes: bytes,
+        diagram_image_bytes: bytes = None,
+        source: str = "",
+        subject: str = "",
         year: int = None,
-        top_k: int = 10
+        top_k: int = 10,
+        metadata_update: dict = None
     ) -> Dict:
-        processed = await self.process_questions(image_bytes, source, subject)
+        processed = await self.process_questions(text_image_bytes, diagram_image_bytes, source, subject, metadata_update)
         matches = await self.matcher.find_duplicates(
             question=processed,
             source=source,

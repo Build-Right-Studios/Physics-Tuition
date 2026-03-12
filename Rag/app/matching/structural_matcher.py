@@ -32,6 +32,19 @@ class StructuralMatcher:
                 scores["concept"] = 1.0 if q1_concept == q2_concept else 0.0
             else:
                 scores["concept"] = 0.0
+                
+        q1_metadata = question1.get("metadata", {})
+        q2_metadata = question2.get("payload", {}).get("metadata", question2.get("metadata", {}))
+
+        meta_scores = []
+        for field in ["class", "chapter", "difficulty"]:
+            v1 = q1_metadata.get(field)
+            v2 = q2_metadata.get(field)
+            if v1 and v2:
+                meta_scores.append(1.0 if v1 == v2 else 0.0)
+        
+        if meta_scores:
+            scores["metadata"] = sum(meta_scores) / len(meta_scores)
         
         scores["total_score"] = sum(scores.values()) / max(len(scores), 1)
         return scores
