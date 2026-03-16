@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import LoginHeader from "../Components/auth/LoginHeader";
+import LoginHeader from "../Components/auth/LoginHeader.jsx";
 import LoginForm from "../Components/auth/LoginForm";
 import LoginFooter from "../Components/auth/LoginFooter";
 
