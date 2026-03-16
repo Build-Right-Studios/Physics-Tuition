@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import LoginHeader from "../Components/auth/LoginHeader.jsx";
-import LoginForm from "../Components/auth/LoginForm";
-import LoginFooter from "../Components/auth/LoginFooter";
+import LoginHeader from "../Components/Auth/LoginHeader.jsx";
+import LoginForm from "../Components/Auth/LoginForm";
+import LoginFooter from "../Components/Auth/LoginFooter";
 
 export default function LoginPage() {
   const navigate = useNavigate();
