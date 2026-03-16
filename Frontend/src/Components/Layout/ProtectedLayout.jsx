@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import DashboardNavbar from "../dashboard/DashboardNavbar";
+import DashboardNavbar from "../Dashboard/DashboardNavbar";
 
 export default function ProtectedLayout() {
   const navigate = useNavigate();
