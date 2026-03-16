@@ -4,11 +4,11 @@
 //        api.post(AUTH.LOGIN, body)
 
 export const BASE= {
-  ROUTE: "http://localhost:3000",
+  ROUTE: "https://questiondesk-backend.onrender.com",
 };
 
 export const RAG = {
-  BASE: "http://127.0.0.1:8000",
+  BASE: "https://questiondesk-rag.onrender.com",
   DELETE_QUESTION: (qdrantId) => `/question/${qdrantId}`,
 };
 
