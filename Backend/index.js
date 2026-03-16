@@ -5,9 +5,10 @@ import cors from "cors";
 
 import routes from "./routes.js"
 import connectMongoDB from "./Config/MongoDb.js";
+import { startCleanupCron } from "./utils/cleanupCron.js"
 
 const app = express();
-const port = 8000;
+const port = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -18,9 +19,10 @@ app.use(cors({
 }));
 
 await connectMongoDB();
+startCleanupCron();
 
 app.use("/", routes);
 
 app.listen(port, () => {
-    console.log("Server Listening on Port 8000.")
+    console.log("Server Listening on Port 3000.")
 })

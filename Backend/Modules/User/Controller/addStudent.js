@@ -2,13 +2,14 @@ import { addStudentService } from "../Service/addStudentService.js"
 
 export const addStudent = async (req, res) => {
     try {
-        const { name, phone, parentPhone, role } = req.body;
+        const { name, phone, parentPhone, role, grade } = req.body;
         if (!name) { throw { status: 400, message: "Name is missing." };}
         if (!phone) { throw { status: 400, message: "Phone Number is missing." };}
         if (!parentPhone) { throw { status: 400, message: "Parent Phone Number is missing." };}
         if (!role) { throw { status: 400, message: "Role is missing." };}
+        if (!grade) { throw { status: 400, message: "Class is missing." };}
 
-        const data = await addStudentService({ name, phone, parentPhone, role });
+        const data = await addStudentService({ name, phone, parentPhone, role, grade });
 
         return res.status(200).json({
             success: true,

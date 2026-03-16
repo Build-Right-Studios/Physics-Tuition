@@ -2,7 +2,7 @@ import { getStudentInternal, addStudentInternal } from "../Internal/addStudentIn
 
 export const addStudentService = async (userData) => {
     try {
-        const { name, phone, parentPhone, role } = userData;
+        const { name, phone, parentPhone, role, grade } = userData;
 
         //Check Existing Chapter
         const existingStudent = await getStudentInternal({ name, phone });
@@ -10,7 +10,7 @@ export const addStudentService = async (userData) => {
             throw { status: 500, message: "Student Already exists"};
         }
 
-        const newStudent = await addStudentInternal({ name, phone, parentPhone, role });
+        const newStudent = await addStudentInternal({ name, phone, parentPhone, role, grade });
 
         return newStudent;
     } catch (error) {

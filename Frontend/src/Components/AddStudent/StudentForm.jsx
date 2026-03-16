@@ -83,21 +83,22 @@ export default function StudentForm({ form, setField, loading, onSubmit, onCance
                 </div>
             </div>
 
-            {/* Role */}
+            {/* Grade */}
             <div className="flex flex-col gap-2">
                 <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-                    Role
+                    Class
                 </label>
                 <div className="relative flex items-center">
                     <select
-                        value={form.role}
-                        onChange={(e) => setField("role")(e.target.value)}
+                        value={form.grade}
+                        onChange={(e) => setField("grade")(e.target.value)}
                         className="w-full appearance-none pr-9 pl-3.5 py-2.5 rounded-xl border text-sm outline-none transition-all duration-150
                             bg-slate-50 text-slate-700 border-slate-200
                             focus:border-blue-500 focus:bg-blue-50 focus:ring-2 focus:ring-blue-100"
                     >
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
+                        <option value="">Select Class</option>
+                        <option value="11">Class 11</option>
+                        <option value="12">Class 12</option>
                     </select>
                     <span className="pointer-events-none absolute right-3 text-slate-400">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

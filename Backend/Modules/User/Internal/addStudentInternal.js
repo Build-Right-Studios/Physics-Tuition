@@ -13,8 +13,8 @@ export const getStudentInternal = async (userData) => {
 
 export const addStudentInternal = async (userData) => {
     try {
-        const { name, phone, parentPhone, role } = userData;
-        const newStudent = await addStudentQuery({ name, phone, parentPhone, role })
+        const { name, phone, parentPhone, role, grade } = userData;
+        const newStudent = await addStudentQuery({ name, phone, parentPhone, role, grade })
         return newStudent;
     } catch (error) {
         console.error("Error in addStudentInternal:", error);

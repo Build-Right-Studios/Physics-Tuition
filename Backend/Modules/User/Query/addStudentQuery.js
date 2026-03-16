@@ -13,8 +13,8 @@ export const getStudentQuery = async (userData) => {
 
 export const addStudentQuery = async (userData) => {
     try {
-        const { name, phone, parentPhone, role } = userData;
-        const newStudent = new User({ name, phone, parentPhone, role });
+        const { name, phone, parentPhone, role, grade } = userData;
+        const newStudent = new User({ name, phone, parentPhone, role, grade });
         const savedStudent = await newStudent.save();
 
         return savedStudent.toObject();

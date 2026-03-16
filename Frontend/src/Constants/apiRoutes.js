@@ -4,7 +4,12 @@
 //        api.post(AUTH.LOGIN, body)
 
 export const BASE= {
-  ROUTE: "http://localhost:8000",
+  ROUTE: "http://localhost:3000",
+};
+
+export const RAG = {
+  BASE: "http://127.0.0.1:8000",
+  DELETE_QUESTION: (qdrantId) => `/question/${qdrantId}`,
 };
 
 export const AUTH = {
@@ -30,7 +35,21 @@ export const SUBTOPICS = {
 
 export const STUDENTS = {
   ADD:    "/api/users/add-student",
-  GET:    "/api/users",
+  GET:    "/api/users/students",
   UPDATE: (id) => `/api/users/${id}`,
   DELETE: (id) => `/api/users/${id}`,
+};
+
+export const QUESTIONS = {
+  ADD:              "/api/questions/add",
+  GET:              "/api/questions/get",
+  GET_BY_QID:       (id) => `/api/questions/${id}`,
+  // GET_BY_ID:        (id) => `/${id}`,   // ✅ fetch single question by id
+  CHECK_SIMILARITY: "/match", // updated
+  UPDATE:           (id) => `/api/questions/${id}`,
+  DELETE:           (id) => `/api/questions/${id}`,
+};
+
+export const ASSIGNMENTS = {
+    GENERATE: "/api/assignments/generate",
 };

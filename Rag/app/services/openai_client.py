@@ -188,7 +188,7 @@ Respond ONLY in JSON:
         (Text-only, no images, so Groq works fine)
         """
         try:
-            prompt = f"""Compare these two JEE questions:
+            prompt = f"""Compare these two questions:
 
 Question 1:
 LaTeX: {q1.get('latex', 'N/A')}
@@ -200,10 +200,13 @@ LaTeX: {q2.get('latex', 'N/A')}
 Text: {q2.get('text', 'N/A')}
 Diagram: {q2.get('diagram_description', 'None')}
 
-Are these duplicates? Consider:
-1. Same concept/principle
-2. Same numerical values
-3. Same diagram topology
+Are these the same question or asking the same thing?
+Focus MAINLY on the question text and concept.
+Diagram descriptions may vary slightly due to AI interpretation - ignore minor diagram differences.
+Consider duplicates if:
+1. Same core concept/principle being tested
+2. Same or very similar question text
+3. Diagram topology is similar (ignore minor description differences)
 
 Respond ONLY in valid JSON (no markdown):
 {{

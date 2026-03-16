@@ -43,6 +43,12 @@ const userSchema = new mongoose.Schema(
       required: true
     },
 
+    grade: {
+      type: String,
+      enum: ["11", "12"],
+      default: null,
+    },
+
     isActive: {
       type: Boolean,
       default: true

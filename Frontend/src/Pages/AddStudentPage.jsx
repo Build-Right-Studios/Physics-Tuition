@@ -14,14 +14,14 @@ import StudentForm from "../Components/AddStudent/StudentForm";
 const BASE_URL = BASE.ROUTE;
 
 const initialForm = {
-    name: "",
-    phone: "",
+    name:        "",
+    phone:       "",
     parentPhone: "",
-    role: "student",
+    grade:       "",
 };
 
 export default function AddStudentPage() {
-    const [form, setForm] = useState(initialForm);
+    const [form,    setForm]    = useState(initialForm);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -29,19 +29,21 @@ export default function AddStudentPage() {
         setForm((prev) => ({ ...prev, [field]: value }));
 
     const handleSubmit = async () => {
-        if (!form.name.trim()) return toast.error("Student name is required");
+        if (!form.name.trim())  return toast.error("Student name is required");
         if (!form.phone.trim()) return toast.error("Phone number is required");
         if (!/^\d{10}$/.test(form.phone)) return toast.error("Enter a valid 10-digit phone number");
         if (form.parentPhone && !/^\d{10}$/.test(form.parentPhone))
             return toast.error("Enter a valid 10-digit parent phone number");
+        if (!form.grade) return toast.error("Please select a class");
 
         try {
             setLoading(true);
             const res = await axios.post(`${BASE_URL}${STUDENTS.ADD}`, {
-                name: form.name.trim(),
-                phone: "+91" + form.phone.trim(),
+                name:        form.name.trim(),
+                phone:       "+91" + form.phone.trim(),
                 parentPhone: form.parentPhone ? "+91" + form.parentPhone.trim() : undefined,
-                role: form.role,
+                role:        "student",
+                grade:       form.grade,
             });
 
             if (res.data.success) {
@@ -62,10 +64,7 @@ export default function AddStudentPage() {
 
     return (
         <>
-            {/* Full-page background */}
             <div className="min-h-screen bg-slate-100 flex flex-col items-center sm:justify-center sm:py-8">
-
-                {/* Mobile-first card shell */}
                 <div className="w-full max-w-[430px] bg-slate-100 min-h-screen sm:min-h-0 sm:rounded-3xl sm:overflow-hidden sm:shadow-2xl sm:shadow-slate-300/60 flex flex-col">
 
                     <PageHeader onBack={() => navigate(-1)} />

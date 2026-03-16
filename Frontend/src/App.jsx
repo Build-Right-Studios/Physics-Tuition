@@ -6,6 +6,11 @@ import ProtectedLayout from "./Components/Layout/ProtectedLayout.jsx";
 import AddChapterPage from "./Pages/AddChapterPage.jsx";
 import CreateSubTopic from "./Pages/CreateSubTopic.jsx";
 import AddStudentPage from "./Pages/AddStudentPage.jsx";
+import AddQuestionPage from "./Pages/AddQuestionPage.jsx";
+import SimilarityResultPage from "./Pages/SimilarityResultPage.jsx";
+import EditQuestionPage from "./Pages/EditQuestionPage.jsx";
+import QuestionDetailPage from "./Pages/QuestionDetailPage.jsx";
+import GenerateAssignmentPage from "./Pages/GenerateAssignmentPage.jsx";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -29,11 +34,13 @@ function App() {
           <Route path="/chapters/add"      element={<AddChapterPage />} />
           <Route path="/subtopics/add"      element={<CreateSubTopic />} />
           <Route path="/students/add"      element={<AddStudentPage />} />
+          <Route path="/questions/add"                element={<AddQuestionPage />} />          
+          <Route path="/questions/similarity-result"  element={<SimilarityResultPage />} />
+          <Route path="/questions/edit/:id"          element={<EditQuestionPage />} />
+          <Route path="/questions/detail/:id" element={<QuestionDetailPage />} />
+          <Route path="/assignments/generate"  element={<GenerateAssignmentPage />} />
 
           {/* 🔧 Add new routes here as pages are built */}
-          {/* <Route path="/subtopics/add"         element={<AddSubTopicPage />} /> */}
-          {/* <Route path="/students/add"          element={<AddStudentPage />} /> */}
-          {/* <Route path="/assignments/generate"  element={<GenerateAssignmentPage />} /> */}
         </Route>
 
         {/* 404 Fallback */}
