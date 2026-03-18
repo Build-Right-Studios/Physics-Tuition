@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { BASE, CHAPTERS, SUBTOPICS, QUESTIONS } from "../Constants/apiRoutes.js";
 
@@ -27,20 +27,39 @@ const EXAM_LABELS = {
 };
 
 export default function QuestionsPage() {
-    const { exam }  = useParams();
-    const navigate  = useNavigate();
-    const source    = EXAM_TO_SOURCE[exam] || exam;
-    const examLabel = EXAM_LABELS[exam]    || exam;
+    const { exam }                      = useParams();
+    const navigate                      = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const source                        = EXAM_TO_SOURCE[exam] || exam;
+    const examLabel                     = EXAM_LABELS[exam]    || exam;
 
+    // Initialise filters from URL params
+    const [filters, setFilters] = useState({
+        exam:       searchParams.get("exam")       || "",
+        grade:      searchParams.get("grade")      || "",
+        chapter:    searchParams.get("chapter")    || "",
+        subtopic:   searchParams.get("subtopic")   || "",
+        difficulty: searchParams.get("difficulty") || "",
+    });
+
+    const [page,      setPage]      = useState(parseInt(searchParams.get("page")) || 1);
     const [questions, setQuestions] = useState([]);
     const [loading,   setLoading]   = useState(true);
     const [total,     setTotal]     = useState(0);
-    const [page,      setPage]      = useState(1);
     const [chapters,  setChapters]  = useState([]);
     const [subTopics, setSubTopics] = useState([]);
-    const [filters,   setFilters]   = useState({
-        exam: "", grade: "", chapter: "", subtopic: "", difficulty: "",
-    });
+
+    // Sync filters + page to URL
+    useEffect(() => {
+        const params = {};
+        if (filters.exam)       params.exam       = filters.exam;
+        if (filters.grade)      params.grade      = filters.grade;
+        if (filters.chapter)    params.chapter    = filters.chapter;
+        if (filters.subtopic)   params.subtopic   = filters.subtopic;
+        if (filters.difficulty) params.difficulty = filters.difficulty;
+        if (page > 1)           params.page       = page;
+        setSearchParams(params, { replace: true });
+    }, [filters, page]);
 
     const setFilter = (field) => (value) => {
         if (field === "chapter") {
@@ -85,7 +104,6 @@ export default function QuestionsPage() {
                 },
             });
             if (res.data.success) {
-                console.log("Questions data:", res.data);
                 setQuestions(res.data.data);
                 setTotal(res.data.total);
             }
@@ -121,7 +139,7 @@ export default function QuestionsPage() {
                     </div>
                 </div>
 
-                {/* Filter bar inside header */}
+                {/* Filter bar */}
                 <div className="max-w-lg mx-auto px-4 pb-3">
                     <FilterBar
                         filters={filters}
