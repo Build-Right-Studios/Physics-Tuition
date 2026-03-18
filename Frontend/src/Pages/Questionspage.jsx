@@ -3,62 +3,74 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { BASE, CHAPTERS, SUBTOPICS, QUESTIONS } from "../Constants/apiRoutes.js";
 
-import FilterBar    from "../Components/Questions/FilterBar.jsx";
+import FilterBar from "../Components/Questions/FilterBar.jsx";
 import QuestionCard from "../Components/Questions/QuestionCard.jsx";
 
 const BASE_URL = BASE.ROUTE;
 
 const EXAM_TO_SOURCE = {
-    "jee-mains":      "jee_mains",
-    "jee-advanced":   "jee_advanced",
-    "neet":           "neet",
-    "cbse":           "cbse_board",
-    "ncert":          "ncert",
+    "jee-mains": "jee_mains",
+    "jee-advanced": "jee_advanced",
+    "neet": "neet",
+    "cbse": "cbse_board",
+    "ncert": "ncert",
     "ncert-exemplar": "ncert_exemplar",
 };
 
 const EXAM_LABELS = {
-    "jee-mains":      "JEE Mains",
-    "jee-advanced":   "JEE Advanced",
-    "neet":           "NEET",
-    "cbse":           "CBSE",
-    "ncert":          "NCERT",
+    "jee-mains": "JEE Mains",
+    "jee-advanced": "JEE Advanced",
+    "neet": "NEET",
+    "cbse": "CBSE",
+    "ncert": "NCERT",
     "ncert-exemplar": "NCERT Exemplar",
 };
 
 export default function QuestionsPage() {
-    const { exam }                      = useParams();
-    const navigate                      = useNavigate();
+    const { exam } = useParams();
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const source                        = EXAM_TO_SOURCE[exam] || exam;
-    const examLabel                     = EXAM_LABELS[exam]    || exam;
+    const source = EXAM_TO_SOURCE[exam] || exam;
+    const examLabel = EXAM_LABELS[exam] || exam;
+    const SESSION_FILTER_KEY = `filters_${exam}`;
 
-    // Initialise filters from URL params
-    const [filters, setFilters] = useState({
-        exam:       searchParams.get("exam")       || "",
-        grade:      searchParams.get("grade")      || "",
-        chapter:    searchParams.get("chapter")    || "",
-        subtopic:   searchParams.get("subtopic")   || "",
-        difficulty: searchParams.get("difficulty") || "",
+    // Initialise filters from URL params first, then sessionStorage as fallback
+    const [filters, setFilters] = useState(() => {
+        const fromURL = {
+            exam: searchParams.get("exam") || "",
+            grade: searchParams.get("grade") || "",
+            chapter: searchParams.get("chapter") || "",
+            subtopic: searchParams.get("subtopic") || "",
+            difficulty: searchParams.get("difficulty") || "",
+        };
+
+        const hasURLFilters = Object.values(fromURL).some(v => v !== "");
+        if (!hasURLFilters) {
+            const stored = sessionStorage.getItem(SESSION_FILTER_KEY);
+            return stored ? JSON.parse(stored) : fromURL;
+        }
+        return fromURL;
     });
 
-    const [page,      setPage]      = useState(parseInt(searchParams.get("page")) || 1);
+    const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
     const [questions, setQuestions] = useState([]);
-    const [loading,   setLoading]   = useState(true);
-    const [total,     setTotal]     = useState(0);
-    const [chapters,  setChapters]  = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [total, setTotal] = useState(0);
+    const [chapters, setChapters] = useState([]);
     const [subTopics, setSubTopics] = useState([]);
 
-    // Sync filters + page to URL
+    // Sync filters + page to URL and sessionStorage
     useEffect(() => {
         const params = {};
-        if (filters.exam)       params.exam       = filters.exam;
-        if (filters.grade)      params.grade      = filters.grade;
-        if (filters.chapter)    params.chapter    = filters.chapter;
-        if (filters.subtopic)   params.subtopic   = filters.subtopic;
+        if (filters.exam) params.exam = filters.exam;
+        if (filters.grade) params.grade = filters.grade;
+        if (filters.chapter) params.chapter = filters.chapter;
+        if (filters.subtopic) params.subtopic = filters.subtopic;
         if (filters.difficulty) params.difficulty = filters.difficulty;
-        if (page > 1)           params.page       = page;
+        if (page > 1) params.page = page;
         setSearchParams(params, { replace: true });
+
+        sessionStorage.setItem(SESSION_FILTER_KEY, JSON.stringify(filters));
     }, [filters, page]);
 
     const setFilter = (field) => (value) => {
@@ -76,7 +88,7 @@ export default function QuestionsPage() {
             params: { grade: filters.grade, subject: "Physics" }
         }).then(res => {
             if (res.data.success) setChapters(res.data.data);
-        }).catch(() => {});
+        }).catch(() => { });
     }, [filters.grade]);
 
     useEffect(() => {
@@ -85,7 +97,7 @@ export default function QuestionsPage() {
             params: { chapterName: filters.chapter }
         }).then(res => {
             if (res.data.success) setSubTopics(res.data.data);
-        }).catch(() => {});
+        }).catch(() => { });
     }, [filters.chapter]);
 
     const fetchQuestions = useCallback(async () => {
@@ -94,10 +106,10 @@ export default function QuestionsPage() {
             const res = await axios.get(`${BASE_URL}${QUESTIONS.GET}`, {
                 params: {
                     source,
-                    exam:       filters.exam,
-                    grade:      filters.grade,
-                    chapter:    filters.chapter,
-                    subtopic:   filters.subtopic,
+                    exam: filters.exam,
+                    grade: filters.grade,
+                    chapter: filters.chapter,
+                    subtopic: filters.subtopic,
                     difficulty: filters.difficulty,
                     page,
                     limit: 20,
@@ -124,7 +136,10 @@ export default function QuestionsPage() {
             <div className="bg-white border-b border-slate-100 sticky top-0 z-40">
                 <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
                     <button
-                        onClick={() => navigate("/dashboard")}
+                        onClick={() => {
+                            sessionStorage.removeItem(SESSION_FILTER_KEY);
+                            navigate("/dashboard");
+                        }}
                         className="p-2 rounded-xl hover:bg-slate-100 transition-colors flex-shrink-0"
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
