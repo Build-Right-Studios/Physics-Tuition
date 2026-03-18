@@ -6,7 +6,7 @@ export const getQuestionsQuery = async (userData) => {
         const skip = (page - 1) * limit;
         return await Question
             .find(filter)
-            .select("statement difficulty tags chapter subTopic appearances answer qdrantId grade subject createdAt")
+            .select("statement difficulty tags chapter subTopic appearances answer qdrantId grade subject createdAt diagramImage")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
