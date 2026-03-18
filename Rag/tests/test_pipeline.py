@@ -183,6 +183,41 @@ async def test_validation_errors(pipeline, image_bytes):
 
     print("Validation tests passed")
 
+async def test_with_options():
+    """Test with options image"""
+    print("\n" + "="*60)
+    print("TEST: PROCESS QUESTION WITH OPTIONS")
+    print("="*60)
+    
+    # Load question image
+    with open("data/test_images/question.jpg", "rb") as f:
+        question_bytes = f.read()
+    
+    # Load options image
+    with open("data/test_images/options.jpg", "rb") as f:
+        options_bytes = f.read()
+    
+    pipeline = RAGPipeline()
+    
+    # Process with options
+    processed = await pipeline.process_question(
+        image_bytes=question_bytes,
+        source="neet",
+        subject="biology",
+        options_image_bytes=options_bytes  
+    )
+    
+    print(f"\n✅ Processing successful!")
+    print(f"\nQuestion: {processed['text'][:100]}...")
+    print(f"\n📋 Options:")
+    if processed.get('options') and processed['options'].get('has_options'):
+        print(f"  A) {processed['options']['option_a']}")
+        print(f"  B) {processed['options']['option_b']}")
+        print(f"  C) {processed['options']['option_c']}")
+        print(f"  D) {processed['options']['option_d']}")
+    else:
+        print("  No options extracted")
+
 
 # ------------------------------------------------------------------
 # Runner
@@ -202,6 +237,7 @@ async def run():
     await test_find_matches(pipeline, image_bytes)
     await test_add_and_verify(pipeline, image_bytes)
     await test_validation_errors(pipeline, image_bytes)
+    await test_with_options()
 
     print_section("ALL TESTS COMPLETED SUCCESSFULLY")
 

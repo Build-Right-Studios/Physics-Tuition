@@ -252,3 +252,92 @@ Respond ONLY in valid JSON (no markdown):
         except Exception as e:
             logger.error(f"LLM verification error: {str(e)}")
             raise
+
+    async def extract_options(self, image_bytes: bytes) -> dict:
+        try:
+            image_base64 = base64.b64encode(image_bytes).decode()
+            
+            response = await self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",  
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": """Extract the 4 MCQ options from this image.
+
+    Instructions:
+    1. Identify options labeled A, B, C, D (or 1, 2, 3, 4)
+    2. Extract the complete text for each option
+    3. If options contain LaTeX/math, preserve it
+    4. Return ONLY valid JSON (no markdown, no extra text)
+
+    Format:
+    {
+        "option_a": "complete text of option A",
+        "option_b": "complete text of option B", 
+        "option_c": "complete text of option C",
+        "option_d": "complete text of option D",
+        "has_options": true
+    }
+
+    If no options found, return:
+    {
+        "option_a": "",
+        "option_b": "",
+        "option_c": "",
+        "option_d": "",
+        "has_options": false
+    }"""
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            content = response.choices[0].message.content
+            
+            try:
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                
+                result = json.loads(content)
+                
+                if "option_a" not in result:
+                    result["option_a"] = ""
+                if "option_b" not in result:
+                    result["option_b"] = ""
+                if "option_c" not in result:
+                    result["option_c"] = ""
+                if "option_d" not in result:
+                    result["option_d"] = ""
+                if "has_options" not in result:
+                    result["has_options"] = False
+                    
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse options JSON: {e}")
+                result = {
+                    "option_a": "",
+                    "option_b": "",
+                    "option_c": "",
+                    "option_d": "",
+                    "has_options": False
+                }
+            
+            logger.info("Options extraction successful")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Options extraction error: {str(e)}")
+            raise
+    

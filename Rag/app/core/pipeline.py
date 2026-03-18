@@ -5,8 +5,9 @@ from app.processing.embedder import Embedder
 from app.matching.matcher import DuplicateMatcher
 from app.database.operations import DatabaseOperations
 from app.database.updater import DatabaseUpdater
+from app.services.openai_client import OpenAIClient
 from app.utils.validators import get_collection_name, validate_source, validate_subject
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class RAGPipeline:
         self.matcher = DuplicateMatcher()
         self.db_ops = DatabaseOperations()
         self.db_updater = DatabaseUpdater()
+        self.openai = OpenAIClient()
 
     async def process_questions(
         self,
@@ -27,7 +29,8 @@ class RAGPipeline:
         diagram_image_bytes: bytes = None,
         source: str = "",
         subject: str = "",
-        metadata_update: dict = None
+        metadata_update: dict = None,
+        options_image_bytes: Optional[bytes] = None
     ) -> Dict:
         """for processing image and converting it into structural data"""
         validate_source(source)
@@ -39,6 +42,58 @@ class RAGPipeline:
         vision_bytes = diagram_image_bytes if diagram_image_bytes else text_image_bytes
         vision_result = await self.vision.analyze(vision_bytes)
 
+        options_result = None
+        if options_image_bytes:
+            logger.info("Extracting options from image...")
+            try:
+                options_result = await self.openai.extract_options(options_image_bytes)
+            except Exception as e:
+                logger.error(f"Options extraction failed: {e}")
+                options_result = {
+                    "option_a": "",
+                    "option_b": "",
+                    "option_c": "",
+                    "option_d": "",
+                    "has_options": False
+                }
+        # debug: log the actual extracted options so we can see what will be returned
+        logger.info("options_result=%r", options_result)
+
+        # normalize extractor output to the expected dict shape {option_a..d, has_options}
+        if options_result:
+            # if extractor returned a raw string (e.g. LaTeX with options), try to parse it
+            if isinstance(options_result, str):
+                import re
+                # look for lines starting with A) or A. etc.
+                lines = re.findall(r'(?m)^[A-D][\)\.\-]\s*(.+)$', options_result)
+                if not lines:
+                    # try splitting by newlines and common separators
+                    parts = [l.strip() for l in re.split(r'\n|\\n', options_result) if l.strip()]
+                    # remove any leading labels like 'A.'
+                    cleaned = [re.sub(r'^[A-D][:)\.\-]?\s*', '', p) for p in parts]
+                    lines = cleaned
+                option_a = lines[0] if len(lines) > 0 else options_result
+                option_b = lines[1] if len(lines) > 1 else ""
+                option_c = lines[2] if len(lines) > 2 else ""
+                option_d = lines[3] if len(lines) > 3 else ""
+                options_result = {
+                    "option_a": option_a.strip(),
+                    "option_b": option_b.strip(),
+                    "option_c": option_c.strip(),
+                    "option_d": option_d.strip(),
+                    "has_options": True
+                }
+            elif isinstance(options_result, dict):
+                # ensure keys exist and are strings
+                options_result = {
+                    "option_a": str(options_result.get("option_a", "")),
+                    "option_b": str(options_result.get("option_b", "")),
+                    "option_c": str(options_result.get("option_c", "")),
+                    "option_d": str(options_result.get("option_d", "")),
+                    "has_options": bool(options_result.get("has_options", True))
+                }
+
+        logger.info("normalized_options_result=%r", options_result)
         normalized = self.normalizer.normalize(
             latex = ocr_result["latex"],
             text = ocr_result["text"],
@@ -56,6 +111,7 @@ class RAGPipeline:
             "circuit_topology": vision_result.get("circuit_topology"),
             "concept": normalized.get("concept"),
             "critical_terms": normalized.get("critical_terms", []),
+            "options": options_result,
             "metadata": {
                 "source": source,
                 "subject": subject,
@@ -79,9 +135,10 @@ class RAGPipeline:
         subject: str = "",
         year: int = None,
         top_k: int = 10,
-        metadata_update: dict = None
+        metadata_update: dict = None,
+        options_image_bytes: Optional[bytes] = None
     ) -> Dict:
-        processed = await self.process_questions(text_image_bytes, diagram_image_bytes, source, subject, metadata_update)
+        processed = await self.process_questions(text_image_bytes, diagram_image_bytes, source, subject, metadata_update, options_image_bytes)
         matches = await self.matcher.find_duplicates(
             question=processed,
             source=source,

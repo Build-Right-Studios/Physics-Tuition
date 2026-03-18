@@ -30,7 +30,7 @@ class AddQuestionRequest(BaseModel):
     source: str
     subject: str
     question_data: Dict[str, Any] = Field(..., description="Processed question data")
-    remove_duplicate_ids: List[str] = Field(default=[], description="IDs to remove")
+    remove_duplicate_ids: List[str] = Field(default_factory=list, description="IDs to remove")
 
     @field_validator("source")
     @classmethod
@@ -48,6 +48,14 @@ class AddQuestionRequest(BaseModel):
 
 # response models
 
+class Options(BaseModel):
+    option_a: str = ""
+    option_b: str = ""
+    option_c: str = ""
+    option_d: str = ""
+    has_options: bool = False
+
+
 class ProcessedQuestion(BaseModel):
     """Processed question data"""
     latex: str
@@ -57,7 +65,8 @@ class ProcessedQuestion(BaseModel):
     diagram_description: Optional[str] = None
     circuit_topology: Optional[str] = None
     concept: Optional[str] = None
-    critical_terms: List[str] = []
+    critical_terms: List[str] = Field(default_factory=list)
+    options: Optional[Options] = None
     metadata: Dict[str, Any]
 
 
@@ -97,3 +106,4 @@ class AddQuestionResponse(BaseModel):
     question_id: str
     removed_ids: List[str]
     message: Optional[str] = None
+    processed_question: Optional[ProcessedQuestion] = None
