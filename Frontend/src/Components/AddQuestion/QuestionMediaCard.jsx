@@ -70,11 +70,12 @@ function UploadZone({ label, sublabel, file, onFileChange, existingUrl }) {
 }
 
 export default function QuestionMediaCard({
-    textImage, setTextImage,
+    textImage,    setTextImage,
     diagramImage, setDiagramImage,
-    specialNote, setSpecialNote,
-    existingStatement,   // populated when editing
-    existingDiagramUrl,  // populated when editing
+    optionsImage, setOptionsImage,
+    specialNote,  setSpecialNote,
+    existingStatement,
+    existingDiagramUrl,
 }) {
     const isEditMode = !!existingStatement;
 
@@ -90,18 +91,15 @@ export default function QuestionMediaCard({
                     <p className="text-[12px] text-slate-400 mt-0.5">
                         {isEditMode
                             ? "Upload new images to replace existing ones, or leave as is."
-                            : "Upload question text and diagram separately."}
+                            : "Upload question text, diagram and options separately."}
                     </p>
                 </div>
             </div>
 
-            {/* ── Edit mode: show existing statement + optional re-upload ── */}
+            {/* Edit mode */}
             {isEditMode ? (
                 <div className="flex flex-col gap-4">
-                    {/* Existing extracted statement */}
                     <StatementPreview statement={existingStatement} />
-
-                    {/* Re-upload text image — optional */}
                     <div className="flex flex-col gap-2">
                         <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                             Replace Text Photo{" "}
@@ -116,7 +114,7 @@ export default function QuestionMediaCard({
                     </div>
                 </div>
             ) : (
-                /* ── Add mode: standard text image upload ── */
+                /* Add mode */
                 <div className="flex flex-col gap-2">
                     <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                         Question Text Photo
@@ -130,7 +128,7 @@ export default function QuestionMediaCard({
                 </div>
             )}
 
-            {/* Diagram — always shown, existingUrl pre-fills in edit mode */}
+            {/* Diagram */}
             <div className="flex flex-col gap-2">
                 <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
                     Diagram{" "}
@@ -144,6 +142,22 @@ export default function QuestionMediaCard({
                     existingUrl={existingDiagramUrl}
                 />
             </div>
+
+            {/* Options Image — only in add mode */}
+            {!isEditMode && (
+                <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
+                        MCQ Options Image{" "}
+                        <span className="text-slate-300 normal-case tracking-normal font-normal">(optional — auto extracts A, B, C, D)</span>
+                    </label>
+                    <UploadZone
+                        label="Upload Options Image"
+                        sublabel="OCR extracts options automatically"
+                        file={optionsImage}
+                        onFileChange={setOptionsImage}
+                    />
+                </div>
+            )}
 
             {/* Special Note */}
             <div className="flex flex-col gap-2">

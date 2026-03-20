@@ -38,7 +38,7 @@ class RAGPipeline:
         logger.info(f"processing question: {source}/{subject}")
 
         ocr_result = await self.ocr.process(text_image_bytes)
-        
+
         vision_bytes = diagram_image_bytes if diagram_image_bytes else text_image_bytes
         vision_result = await self.vision.analyze(vision_bytes)
 
@@ -56,20 +56,15 @@ class RAGPipeline:
                     "option_d": "",
                     "has_options": False
                 }
-        # debug: log the actual extracted options so we can see what will be returned
+
         logger.info("options_result=%r", options_result)
 
-        # normalize extractor output to the expected dict shape {option_a..d, has_options}
         if options_result:
-            # if extractor returned a raw string (e.g. LaTeX with options), try to parse it
             if isinstance(options_result, str):
                 import re
-                # look for lines starting with A) or A. etc.
                 lines = re.findall(r'(?m)^[A-D][\)\.\-]\s*(.+)$', options_result)
                 if not lines:
-                    # try splitting by newlines and common separators
                     parts = [l.strip() for l in re.split(r'\n|\\n', options_result) if l.strip()]
-                    # remove any leading labels like 'A.'
                     cleaned = [re.sub(r'^[A-D][:)\.\-]?\s*', '', p) for p in parts]
                     lines = cleaned
                 option_a = lines[0] if len(lines) > 0 else options_result
@@ -84,7 +79,6 @@ class RAGPipeline:
                     "has_options": True
                 }
             elif isinstance(options_result, dict):
-                # ensure keys exist and are strings
                 options_result = {
                     "option_a": str(options_result.get("option_a", "")),
                     "option_b": str(options_result.get("option_b", "")),
@@ -94,39 +88,41 @@ class RAGPipeline:
                 }
 
         logger.info("normalized_options_result=%r", options_result)
+
         normalized = self.normalizer.normalize(
-            latex = ocr_result["latex"],
-            text = ocr_result["text"],
-            diagram = vision_result.get("description", "")
+            latex=ocr_result["latex"],
+            text=ocr_result["text"],
+            diagram=vision_result.get("description", "")
         )
 
         embedding = await self.embedder.generate(normalized["searchable_text"])
 
         processed = {
-            "latex": ocr_result["latex"],
-            "text": ocr_result["text"],
-            "normalized_text": normalized["text"],
-            "embedding": embedding,
+            "latex":               ocr_result["latex"],
+            "text":                ocr_result["text"],
+            "normalized_text":     normalized["text"],
+            "embedding":           embedding,
             "diagram_description": vision_result["description"],
-            "circuit_topology": vision_result.get("circuit_topology"),
-            "concept": normalized.get("concept"),
-            "critical_terms": normalized.get("critical_terms", []),
-            "options": options_result,
+            "circuit_topology":    vision_result.get("circuit_topology"),
+            "concept":             normalized.get("concept"),
+            "critical_terms":      normalized.get("critical_terms", []),
+            "options":             options_result,
             "metadata": {
-                "source": source,
-                "subject": subject,
-                "has_diagram": bool(diagram_image_bytes) or vision_result["has_diagram"],
+                "source":       source,
+                "subject":      subject,
+                "has_diagram":  bool(diagram_image_bytes) or vision_result["has_diagram"],
                 "math_entities": normalized.get("math_entities", [])
             }
         }
-        
+
         if metadata_update:
             filtered_metadata_update = {k: v for k, v in metadata_update.items() if v is not None}
             processed["metadata"].update(filtered_metadata_update)
 
+        logger.info(f"processed options before return: {processed.get('options')}")
         logger.info("question processed")
         return processed
-    
+
     async def find_matches(
         self,
         text_image_bytes: bytes,
@@ -138,7 +134,10 @@ class RAGPipeline:
         metadata_update: dict = None,
         options_image_bytes: Optional[bytes] = None
     ) -> Dict:
-        processed = await self.process_questions(text_image_bytes, diagram_image_bytes, source, subject, metadata_update, options_image_bytes)
+        processed = await self.process_questions(
+            text_image_bytes, diagram_image_bytes,
+            source, subject, metadata_update, options_image_bytes
+        )
         matches = await self.matcher.find_duplicates(
             question=processed,
             source=source,
@@ -147,11 +146,13 @@ class RAGPipeline:
             top_k=top_k
         )
 
+        logger.info(f"processed_question options in find_matches: {processed.get('options')}")
+
         return {
             "processed_question": processed,
-            "matches": matches
+            "matches":            matches
         }
-    
+
     async def add_question(
         self,
         source: str,
@@ -160,15 +161,13 @@ class RAGPipeline:
         remove_duplicate_ids: List[str] = []
     ) -> Dict:
         """add new question and remove duplicates"""
-
         removed = []
         for dup in remove_duplicate_ids:
             success = await self.db_updater.delete_question(
-                question_id = dup,
+                question_id=dup,
                 source=source,
                 subject=subject
             )
-
             if success:
                 removed.append(dup)
 
@@ -179,15 +178,15 @@ class RAGPipeline:
         )
 
         return {
-            "question_id": question_id,
-            "removed_ids": removed
+            "question_id":  question_id,
+            "removed_ids":  removed
         }
-    
+
     async def delete_question(
         self,
         question_id: str,
         source: str,
-        subject: str 
+        subject: str
     ) -> bool:
         return await self.db_updater.delete_question(
             question_id=question_id,

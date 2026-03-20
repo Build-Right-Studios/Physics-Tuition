@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import List, Optional, Dict, Any
 from app.utils.validators import validate_source, validate_subject
 
@@ -49,6 +49,7 @@ class AddQuestionRequest(BaseModel):
 # response models
 
 class Options(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     option_a: str = ""
     option_b: str = ""
     option_c: str = ""
@@ -57,7 +58,7 @@ class Options(BaseModel):
 
 
 class ProcessedQuestion(BaseModel):
-    """Processed question data"""
+    model_config = ConfigDict(extra="ignore")
     latex: str
     text: str
     normalized_text: str

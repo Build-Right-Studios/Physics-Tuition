@@ -6,7 +6,7 @@ const DIFFICULTY_COLORS = {
     Hard:   "bg-red-50 text-red-500 border border-red-200",
 };
 
-export default function NoMatchResult({ formData, saving, onSave, answer, setAnswer }) {
+export default function NoMatchResult({ formData, saving, onSave, answer, setAnswer, prefillOptions }) {
     return (
         <div className="flex flex-col gap-4">
             {/* Success state */}
@@ -71,7 +71,11 @@ export default function NoMatchResult({ formData, saving, onSave, answer, setAns
             </div>
 
             {/* Answer Card */}
-            <AnswerCard answer={answer} setAnswer={setAnswer} />
+            <AnswerCard
+                answer={answer}
+                setAnswer={setAnswer}
+                prefillOptions={prefillOptions}
+            />
 
             {/* Save button */}
             <button

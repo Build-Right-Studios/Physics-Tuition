@@ -14,37 +14,38 @@ import AppearancesCard from "../Components/AddQuestion/AppearancesCard";
 import CheckSimilarityButton from "../Components/AddQuestion/CheckSimilarityButton";
 
 const BASE_URL = BASE.ROUTE;
-const RAG_URL  = RAG.BASE;
+const RAG_URL = RAG.BASE;
 
 const initialForm = {
-    grade:       "",
-    subject:     "",
-    chapter:     "",
-    subTopic:    "",
-    difficulty:  "",
-    tags:        [],
+    grade: "",
+    subject: "",
+    chapter: "",
+    subTopic: "",
+    difficulty: "",
+    tags: [],
     specialNote: "",
     appearances: [],
 };
 
 const TAG_TO_SOURCE = {
-    "NEET":           "neet",
-    "JEE Main":       "jee_mains",
-    "JEE Advanced":   "jee_advanced",
-    "CBSE Board":     "cbse_board",
-    "NCERT":          "ncert",
+    "NEET": "neet",
+    "JEE Main": "jee_mains",
+    "JEE Advanced": "jee_advanced",
+    "CBSE Board": "cbse_board",
+    "NCERT": "ncert",
     "NCERT Exemplar": "ncert_exemplar",
 };
 
 export default function AddQuestionPage() {
     const navigate = useNavigate();
 
-    const [form,          setForm]          = useState(initialForm);
-    const [chapters,      setChapters]      = useState([]);
-    const [subTopics,     setSubTopics]     = useState([]);
-    const [textImage,     setTextImage]     = useState(null);
-    const [diagramImage,  setDiagramImage]  = useState(null);
-    const [loading,       setLoading]       = useState(false);
+    const [form, setForm] = useState(initialForm);
+    const [chapters, setChapters] = useState([]);
+    const [subTopics, setSubTopics] = useState([]);
+    const [textImage, setTextImage] = useState(null);
+    const [diagramImage, setDiagramImage] = useState(null);
+    const [optionsImage, setOptionsImage] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [loadingDirect, setLoadingDirect] = useState(false);
 
     const setField = (field) => (value) =>
@@ -75,32 +76,33 @@ export default function AddQuestionPage() {
     };
 
     const validateForm = () => {
-        if (!form.grade)            { toast.error("Please select a class");                  return false; }
-        if (!form.subject)          { toast.error("Please select a subject");                return false; }
-        if (!form.chapter)          { toast.error("Please select a chapter");                return false; }
-        if (!form.subTopic)         { toast.error("Please select a subtopic");               return false; }
-        if (!form.difficulty)       { toast.error("Please select difficulty");               return false; }
-        if (form.tags.length === 0) { toast.error("Please select at least one exam tag");   return false; }
-        if (!textImage)             { toast.error("Please upload the question text photo"); return false; }
+        if (!form.grade) { toast.error("Please select a class"); return false; }
+        if (!form.subject) { toast.error("Please select a subject"); return false; }
+        if (!form.chapter) { toast.error("Please select a chapter"); return false; }
+        if (!form.subTopic) { toast.error("Please select a subtopic"); return false; }
+        if (!form.difficulty) { toast.error("Please select difficulty"); return false; }
+        if (form.tags.length === 0) { toast.error("Please select at least one exam tag"); return false; }
+        if (!textImage) { toast.error("Please upload the question text photo"); return false; }
         return true;
     };
 
     const buildFormData = () => {
+
         const formData = new FormData();
-        formData.append("text_image",  textImage);
+        formData.append("text_image", textImage);
         if (diagramImage) formData.append("diagram_image", diagramImage);
-        formData.append("source",      TAG_TO_SOURCE[form.tags[0]]);
-        formData.append("subject",     form.subject.toLowerCase());
-        formData.append("class",       form.grade);
-        formData.append("chapter",     form.chapter);
-        formData.append("subtopic",    form.subTopic);
-        formData.append("difficulty",  form.difficulty);
-        formData.append("exam_tags",   form.tags.map(tag => TAG_TO_SOURCE[tag]).join(","));
+        if (optionsImage) formData.append("options_image", optionsImage);
+        formData.append("source", TAG_TO_SOURCE[form.tags[0]]);
+        formData.append("subject", form.subject.toLowerCase());
+        formData.append("class", form.grade);
+        formData.append("chapter", form.chapter);
+        formData.append("subtopic", form.subTopic);
+        formData.append("difficulty", form.difficulty);
+        formData.append("exam_tags", form.tags.map(tag => TAG_TO_SOURCE[tag]).join(","));
         formData.append("appearances", JSON.stringify(form.appearances));
         return formData;
     };
 
-    // ── Check Similarity ─────────────────────────────────────────────────────
     const handleCheckSimilarity = async () => {
         if (!validateForm()) return;
 
@@ -113,15 +115,15 @@ export default function AddQuestionPage() {
             const res = await axios.post(`${RAG_URL}${QUESTIONS.CHECK_SIMILARITY}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-
+            
             navigate("/questions/similarity-result", {
                 state: {
-                    formData:          form,
-                    extractedText:     res.data.processed_question.text,
+                    formData: form,
+                    extractedText: res.data.processed_question.text,
                     processedQuestion: res.data.processed_question,
                     diagramImage,
-                    matches:           res.data.matches,
-                    matchCount:        res.data.match_count,
+                    matches: res.data.matches,
+                    matchCount: res.data.match_count,
                 },
             });
         } catch (error) {
@@ -132,7 +134,6 @@ export default function AddQuestionPage() {
         }
     };
 
-    // ── Save Directly ─────────────────────────────────────────────────────────
     const handleSaveDirectly = async () => {
         if (!validateForm()) return;
 
@@ -145,14 +146,17 @@ export default function AddQuestionPage() {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
+            console.log("RAW process response:", res.data);        // ← add this
+            console.log("options:", res.data?.options);            // ← add this
+
             navigate("/questions/similarity-result", {
                 state: {
-                    formData:          form,
-                    extractedText:     res.data.text,
+                    formData: form,
+                    extractedText: res.data.text,
                     processedQuestion: res.data,
                     diagramImage,
-                    matches:           [],
-                    matchCount:        0,
+                    matches: [],
+                    matchCount: 0,
                 },
             });
         } catch (error) {
@@ -185,6 +189,8 @@ export default function AddQuestionPage() {
                             setTextImage={setTextImage}
                             diagramImage={diagramImage}
                             setDiagramImage={setDiagramImage}
+                            optionsImage={optionsImage}
+                            setOptionsImage={setOptionsImage}
                             specialNote={form.specialNote}
                             setSpecialNote={setField("specialNote")}
                         />
@@ -194,13 +200,11 @@ export default function AddQuestionPage() {
                             setAppearances={setField("appearances")}
                         />
 
-                        {/* Check Similarity Button */}
                         <CheckSimilarityButton
                             loading={loading}
                             onCheck={handleCheckSimilarity}
                         />
 
-                        {/* Save Directly Button */}
                         <button
                             onClick={handleSaveDirectly}
                             disabled={loadingDirect || loading}

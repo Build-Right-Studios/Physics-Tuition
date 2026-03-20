@@ -10,20 +10,20 @@ import NoMatchResult from "../Components/AddQuestion/NoMatchResult";
 import MatchResult from "../Components/AddQuestion/MatchResult";
 
 const BASE_URL = BASE.ROUTE;
-const RAG_URL  = RAG.BASE;
+const RAG_URL = RAG.BASE;
 const SESSION_KEY = "similarityState";
 
 export const TAG_TO_SOURCE = {
-    "NEET":           "neet",
-    "JEE Main":       "jee_mains",
-    "JEE Advanced":   "jee_advanced",
-    "CBSE Board":     "cbse_board",
-    "NCERT":          "ncert",
+    "NEET": "neet",
+    "JEE Main": "jee_mains",
+    "JEE Advanced": "jee_advanced",
+    "CBSE Board": "cbse_board",
+    "NCERT": "ncert",
     "NCERT Exemplar": "ncert_exemplar",
 };
 
 export default function SimilarityResultPage() {
-    const navigate  = useNavigate();
+    const navigate = useNavigate();
     const { state } = useLocation();
     const [saving, setSaving] = useState(false);
     const [answer, setAnswer] = useState(null);
@@ -31,11 +31,11 @@ export default function SimilarityResultPage() {
     useEffect(() => {
         if (state) {
             sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-                formData:          state.formData,
-                extractedText:     state.extractedText,
+                formData: state.formData,
+                extractedText: state.extractedText,
                 processedQuestion: state.processedQuestion,
-                matches:           state.matches,
-                matchCount:        state.matchCount,
+                matches: state.matches,
+                matchCount: state.matchCount,
             }));
         }
     }, [state]);
@@ -51,39 +51,39 @@ export default function SimilarityResultPage() {
     }
 
     const { formData, matches, matchCount, processedQuestion } = resolvedState;
-    const extractedText  = resolvedState?.extractedText || "";
-    const diagramImage   = state?.diagramImage || null;
-    const hasMatches     = matchCount > 0 && matches?.some(m => m.similarity_score > 0.5);
+    const extractedText = resolvedState?.extractedText || "";
+    const diagramImage = state?.diagramImage || null;
+
+    // Extract prefill options from processedQuestion
+    const prefillOptions = processedQuestion?.options || null;
+
+    const hasMatches = matchCount > 0 && matches?.some(m => m.similarity_score > 0.5);
 
     const handleSaveQuestion = async () => {
         try {
             setSaving(true);
 
-            // Step 1 — Index in Qdrant
             const qdrantRes = await axios.post(`${RAG_URL}/question`, {
-                source:               TAG_TO_SOURCE[formData.tags[0]],
-                subject:              formData.subject.toLowerCase(),
-                question_data:        processedQuestion,
+                source: TAG_TO_SOURCE[formData.tags[0]],
+                subject: formData.subject.toLowerCase(),
+                question_data: processedQuestion,
                 remove_duplicate_ids: [],
             });
 
-            // Step 2 — Build FormData for Express
             const payload = new FormData();
-            payload.append("grade",       formData.grade);
-            payload.append("subject",     formData.subject);
-            payload.append("chapter",     formData.chapter);
-            payload.append("subTopic",    formData.subTopic);
-            payload.append("difficulty",  formData.difficulty);
-            payload.append("tags",        JSON.stringify(formData.tags));
+            payload.append("grade", formData.grade);
+            payload.append("subject", formData.subject);
+            payload.append("chapter", formData.chapter);
+            payload.append("subTopic", formData.subTopic);
+            payload.append("difficulty", formData.difficulty);
+            payload.append("tags", JSON.stringify(formData.tags));
             payload.append("appearances", JSON.stringify(formData.appearances));
             payload.append("specialNote", formData.specialNote);
-            payload.append("statement",   extractedText);
-            payload.append("qdrantId",    qdrantRes.data.question_id);
+            payload.append("statement", extractedText);
+            payload.append("qdrantId", qdrantRes.data.question_id);
             if (diagramImage) payload.append("diagramImage", diagramImage);
 
-            // Step 3 — Append answer
             if (answer) {
-                // Strip imageFile/imagePreview before serializing
                 const answerToSave = {
                     ...answer,
                     options: answer.options?.map(({ label, text, imageUrl }) => ({
@@ -91,8 +91,6 @@ export default function SimilarityResultPage() {
                     })),
                 };
                 payload.append("answer", JSON.stringify(answerToSave));
-
-                // Append option image files separately
                 answer.options?.forEach(option => {
                     if (option.imageFile) {
                         payload.append(`optionImage_${option.label}`, option.imageFile);
@@ -100,7 +98,6 @@ export default function SimilarityResultPage() {
                 });
             }
 
-            // Step 4 — Save to MongoDB
             const res = await axios.post(`${BASE_URL}${QUESTIONS.ADD}`, payload, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
@@ -120,8 +117,8 @@ export default function SimilarityResultPage() {
     const handleEdit = (q) => {
         navigate(`/questions/edit/${q.question_id}`, {
             state: {
-                question:             q,
-                incomingStatement:    extractedText,
+                question: q,
+                incomingStatement: extractedText,
                 incomingDiagramImage: diagramImage,
             },
         });
@@ -142,6 +139,7 @@ export default function SimilarityResultPage() {
                                 onSave={handleSaveQuestion}
                                 answer={answer}
                                 setAnswer={setAnswer}
+                                prefillOptions={prefillOptions}
                             />
                         ) : (
                             <MatchResult
@@ -151,6 +149,7 @@ export default function SimilarityResultPage() {
                                 onEdit={handleEdit}
                                 answer={answer}
                                 setAnswer={setAnswer}
+                                prefillOptions={prefillOptions}
                             />
                         )}
                     </div>

@@ -6,36 +6,41 @@ from app.api.models import (
     AddQuestionRequest, AddQuestionResponse,
 )
 from app.utils.validators import ValidationError
+from typing import Optional
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Physics Tuition RAG API", version="0.1.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 pipeline = RAGPipeline()
 
-from typing import Optional
 
 @app.post("/process", response_model=ProcessedQuestion)
 async def process_question(
-    text_image: UploadFile = File(...),
+    text_image:    UploadFile           = File(...),
     diagram_image: Optional[UploadFile] = File(None),
     options_image: Optional[UploadFile] = File(None, description="MCQ options image"),
-    source: str = Form(...),
-    subject: str = Form(...),
-    special_note: Optional[str] = Form(None),
-    class_name: Optional[str] = Form(None, alias="class"),
-    chapter: Optional[str] = Form(None),
-    subtopic: Optional[str] = Form(None),
-    difficulty: Optional[str] = Form(None),
-    exam_tags: Optional[str] = Form(None),
-    appearances: Optional[str] = Form(None),
+    source:        str                  = Form(...),
+    subject:       str                  = Form(...),
+    special_note:  Optional[str]        = Form(None),
+    class_name:    Optional[str]        = Form(None, alias="class"),
+    chapter:       Optional[str]        = Form(None),
+    subtopic:      Optional[str]        = Form(None),
+    difficulty:    Optional[str]        = Form(None),
+    exam_tags:     Optional[str]        = Form(None),
+    appearances:   Optional[str]        = Form(None),
 ):
     try:
-        text_image_bytes = await text_image.read()
+        text_image_bytes    = await text_image.read()
         diagram_image_bytes = await diagram_image.read() if diagram_image else None
         options_image_bytes = None
         if options_image:
@@ -45,12 +50,12 @@ async def process_question(
 
         metadata_update = {
             "special_note": special_note,
-            "class": class_name,
-            "chapter": chapter,
-            "subtopic": subtopic,
-            "difficulty": difficulty,
-            "exam_tags": exam_tags,
-            "appearances": appearances
+            "class":        class_name,
+            "chapter":      chapter,
+            "subtopic":     subtopic,
+            "difficulty":   difficulty,
+            "exam_tags":    exam_tags,
+            "appearances":  appearances
         }
 
         result = await pipeline.process_questions(
@@ -62,7 +67,9 @@ async def process_question(
             metadata_update=metadata_update
         )
 
+        logger.info(f"process endpoint options: {result.get('options')}")
         return result
+
     except ValidationError as e:
         raise HTTPException(422, detail=str(e))
     except Exception as e:
@@ -72,25 +79,25 @@ async def process_question(
 
 @app.post("/match", response_model=MatchResponse)
 async def find_matches(
-    text_image: UploadFile = File(...),
+    text_image:    UploadFile           = File(...),
     diagram_image: Optional[UploadFile] = File(None),
-    options_image: Optional[UploadFile] = File(None, description="MCQ options image"), 
-    source: str = Form(...),
-    subject: str = Form(...),
-    year: Optional[int] = Form(None),
-    top_k: int = Form(10, ge=1, le=50),
-    special_note: Optional[str] = Form(None),
-    class_name: Optional[str] = Form(None, alias="class"),
-    chapter: Optional[str] = Form(None),
-    subtopic: Optional[str] = Form(None),
-    difficulty: Optional[str] = Form(None),
-    exam_tags: Optional[str] = Form(None),
-    appearances: Optional[str] = Form(None),
+    options_image: Optional[UploadFile] = File(None, description="MCQ options image"),
+    source:        str                  = Form(...),
+    subject:       str                  = Form(...),
+    year:          Optional[int]        = Form(None),
+    top_k:         int                  = Form(10, ge=1, le=50),
+    special_note:  Optional[str]        = Form(None),
+    class_name:    Optional[str]        = Form(None, alias="class"),
+    chapter:       Optional[str]        = Form(None),
+    subtopic:      Optional[str]        = Form(None),
+    difficulty:    Optional[str]        = Form(None),
+    exam_tags:     Optional[str]        = Form(None),
+    appearances:   Optional[str]        = Form(None),
 ):
     try:
-        text_image_bytes = await text_image.read()
+        text_image_bytes    = await text_image.read()
         diagram_image_bytes = await diagram_image.read() if diagram_image else None
-        options_bytes = None
+        options_bytes       = None
         if options_image:
             options_bytes = await options_image.read()
             if not options_bytes:
@@ -98,12 +105,12 @@ async def find_matches(
 
         metadata_update = {
             "special_note": special_note,
-            "class": class_name,
-            "chapter": chapter,
-            "subtopic": subtopic,
-            "difficulty": difficulty,
-            "exam_tags": exam_tags,
-            "appearances": appearances
+            "class":        class_name,
+            "chapter":      chapter,
+            "subtopic":     subtopic,
+            "difficulty":   difficulty,
+            "exam_tags":    exam_tags,
+            "appearances":  appearances
         }
 
         result = await pipeline.find_matches(
@@ -116,6 +123,8 @@ async def find_matches(
             metadata_update=metadata_update,
             options_image_bytes=options_bytes
         )
+
+        logger.info(f"match endpoint processed_question options: {result['processed_question'].get('options')}")
 
         matches = [
             Match(
@@ -134,6 +143,7 @@ async def find_matches(
             processed_question=result["processed_question"],
             matches=matches, match_count=len(matches),
         )
+
     except ValidationError as e:
         raise HTTPException(422, detail=str(e))
     except Exception as e:
@@ -143,13 +153,13 @@ async def find_matches(
 
 @app.post("/question", response_model=AddQuestionResponse)
 async def add_question(
-    req: Request,
-    text_image: Optional[UploadFile] = File(None),
-    diagram_image: Optional[UploadFile] = File(None),
-    options_image: Optional[UploadFile] = File(None),
-    source: Optional[str] = Form(None),
-    subject: Optional[str] = Form(None),
-    remove_duplicate_ids: Optional[str] = Form(None),
+    req:                  Request,
+    text_image:           Optional[UploadFile] = File(None),
+    diagram_image:        Optional[UploadFile] = File(None),
+    options_image:        Optional[UploadFile] = File(None),
+    source:               Optional[str]        = Form(None),
+    subject:              Optional[str]        = Form(None),
+    remove_duplicate_ids: Optional[str]        = Form(None),
 ):
     content_type = req.headers.get("content-type", "")
     is_multipart = content_type.startswith("multipart/form-data") or any([text_image, diagram_image, options_image, source])
@@ -166,7 +176,7 @@ async def add_question(
         if not source or not subject:
             raise HTTPException(422, detail="source and subject are required")
 
-        text_bytes = await text_image.read() if text_image else None
+        text_bytes    = await text_image.read()    if text_image    else None
         diagram_bytes = await diagram_image.read() if diagram_image else None
         options_bytes = await options_image.read() if options_image else None
 
@@ -196,7 +206,7 @@ async def add_question(
             processed_question=processed
         )
     else:
-        body = await req.json()
+        body    = await req.json()
         payload = AddQuestionRequest(**body)
         add_result = await pipeline.add_question(
             source=payload.source,
@@ -213,6 +223,8 @@ async def add_question(
             message=f"added. {len(add_result.get('removed_ids', []))} duplicates removed.",
             processed_question=None
         )
+
+
 @app.delete("/question/{question_id}")
 async def delete_question(question_id: str, source: str, subject: str):
     try:
