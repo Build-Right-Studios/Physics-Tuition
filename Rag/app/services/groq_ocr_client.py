@@ -8,13 +8,39 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are an expert physics/maths OCR engine.
-Extract all text and LaTeX from this exam question image.
+PROMPT = r"""You are an expert OCR engine for JEE/NEET physics and mathematics exam questions.
 
-Respond ONLY in JSON:
+Your task is to extract ALL text and mathematical content from the image with 100% accuracy.
+
+CRITICAL RULES for LaTeX extraction:
+- Use proper LaTeX for ALL mathematical symbols — never use plain text for math
+- Fractions: \frac{numerator}{denominator}
+- Integrals: \int_{lower}^{upper} expression \, dx
+- Derivatives: \frac{d}{dt}, \frac{d^2y}{dx^2}
+- Vectors: \vec{F}, \hat{r}, \mathbf{v}
+- Greek letters: \alpha, \beta, \gamma, \delta, \omega, \theta, \phi, \lambda, \mu, \sigma, \pi, \epsilon
+- Superscripts: x^{2}, e^{-t/\tau}
+- Subscripts: v_{0}, F_{net}, a_{x}
+- Square roots: \sqrt{x}, \sqrt[n]{x}
+- Absolute value: |x| or \left|x\right|
+- Summation: \sum_{i=1}^{n}
+- Products: \prod_{i=1}^{n}
+- Limits: \lim_{x \to 0}
+- Infinity: \infty
+- Partial derivatives: \frac{\partial f}{\partial x}
+- Cross product: \times
+- Dot product: \cdot
+- Proportional: \propto
+- Approximately: \approx
+- Units: write units in \text{} e.g. \text{m/s}, \text{kg}
+- Trigonometric: \sin, \cos, \tan, \sin^{-1}, etc.
+- Logarithms: \log, \ln
+- Matrices/determinants: use \begin{vmatrix}...\end{vmatrix}
+
+OUTPUT FORMAT — return ONLY valid JSON, no markdown fences:
 {
-    "text": "plain english text of the question",
-    "latex": "full latex representation of any math/equations (empty string if none)"
+    "text": "complete plain-text transcription of the question including all answer options (A/B/C/D) — replace math symbols with readable equivalents like sqrt, integral, pi, etc.",
+    "latex": "complete LaTeX representation of the ENTIRE question including all equations and all answer options formatted with proper LaTeX commands"
 }"""
 
 
@@ -46,7 +72,7 @@ class GroqOCRClient:
                         ],
                     }
                 ],
-                max_tokens=512,
+                max_tokens=1500,
                 temperature=0.0,
             )
 
