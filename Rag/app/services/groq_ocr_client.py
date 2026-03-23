@@ -8,13 +8,28 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PROMPT = """You are an expert physics/maths OCR engine.
-Extract all text and LaTeX from this exam question image.
+PROMPT = r"""You are an expert mathematical typesetter and OCR engine specializing in JEE/NEET physics and mathematics exam questions.
 
-Respond ONLY in JSON:
+Your task is to extract ALL text and mathematical content from the image with 100% accuracy and output it as structured data.
+
+CRITICAL STRUCTURAL RULES (LaTeX Formulation):
+1. Natural Mixing: Write standard English prose normally. ONLY use math mode (enclose in `$` for inline, or `$$` for display) for variables, numbers, formulas, equations, and standalone symbols. 
+2. NO Global Math Mode: NEVER wrap an entire sentence or paragraph in math mode. Use math mode strictly for the mathematical elements.
+3. Units: Keep units inside the math mode with their corresponding values, but use `\mathrm{}` or `\text{}` to prevent them from being italicized (e.g., `$9.8 \mathrm{m/s}^2$`).
+4. Proper Macros: Always use proper LaTeX macros for operators and functions to ensure correct formatting (e.g., use `\sin`, `\ln`, `\lim`, `\int`, `\times`, `\sum` rather than plain text equivalents inside math mode).
+5. Vectors and Matrices: Use `\vec{}` or `\mathbf{}` for vectors. Use `\begin{vmatrix}...\end{vmatrix}` or `\begin{bmatrix}...\end{bmatrix}` for matrices and determinants.
+
+CRITICAL JSON RULES (Escaping):
+1. You must output ONLY valid JSON. Absolutely no markdown formatting blocks (like ```json), no preamble, and no conversational text.
+2. Double Escaping: Because the output is a JSON string, you MUST double-escape your LaTeX backslashes so the JSON parser doesn't break. 
+   - Write `\\frac{1}{2}` instead of `\frac{1}{2}`.
+   - Write `\\sin\\theta` instead of `\sin\theta`.
+   - Write `\\mathrm{kg}` instead of `\mathrm{kg}`.
+
+OUTPUT FORMAT:
 {
-    "text": "plain english text of the question",
-    "latex": "full latex representation of any math/equations (empty string if none)"
+    "text": "A complete, readable plain-text transcription of the question including all answer options. Replace math symbols with highly readable text equivalents (e.g., 'integral of x dx', 'sqrt(x)', 'pi', 'alpha'). Do not use LaTeX formatting here.",
+    "latex": "The perfectly formatted string mixing standard English text and properly double-escaped LaTeX math mode, including all equations and all answer options."
 }"""
 
 
@@ -46,7 +61,7 @@ class GroqOCRClient:
                         ],
                     }
                 ],
-                max_tokens=512,
+                max_tokens=1500,
                 temperature=0.0,
             )
 

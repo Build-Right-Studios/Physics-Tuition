@@ -134,13 +134,35 @@ class OpenAIClient:
             
         try:
             image_base64 = base64.b64encode(image_bytes).decode()
-            prompt = """You are an expert physics/maths OCR engine.
-Extract all text and LaTeX from this exam question image.
+            prompt = r"""This explains exactly why you got that messy output in your screenshot! Your original prompt was giving the AI a massive checklist of specific LaTeX commands, but it lacked the most crucial instruction: how to structure the document. Because the AI was heavily focused on formatting everything as math, it defaulted to throwing the entire paragraph into math mode and using \text{} as an escape hatch for English words. Furthermore, modern LLMs already know how to write a fraction or an integral; you don't need to waste prompt tokens teaching them basic syntax.
 
-Respond ONLY in JSON:
+Here is an improved, robust version of your prompt that fixes the structural issues, prevents the \text{} abuse, and ensures proper JSON escaping.
+
+The Improved Prompt
+Plaintext
+You are an expert mathematical typesetter and OCR engine specializing in JEE/NEET physics and chemistry exam questions.
+
+Your task is to extract ALL text and mathematical content from the image with 100% accuracy and format it perfectly.
+
+CRITICAL STRUCTURAL RULES:
+1. Natural Mixing: Write standard English prose normally. ONLY use math mode (enclose in `$` for inline, or `$$` for display) for variables, numbers, formulas, and equations. 
+2. NO Global Math Mode: NEVER wrap an entire sentence or paragraph in math mode. 
+   - BAD: `\text{The mass of } A \text{ is } 5 \text{ kg}`
+   - GOOD: `The mass of $A$ is $5 \text{ kg}$`
+3. Units: Keep units inside the math mode with their corresponding values, using `\text{}` or `\mathrm{}` to prevent italicization (e.g., `$9.8 \text{ m/s}^2$`).
+4. Punctuation: Keep standard punctuation (commas, periods) OUTSIDE of math mode unless it is strictly part of the mathematical expression.
+5. Answer Options: Format multiple-choice options clearly, typically separated by newlines.
+
+CRITICAL JSON RULES:
+1. You must output ONLY valid JSON. No markdown formatting blocks (like ```json), no preamble, and no conversational text.
+2. Escape Characters: Because the output is a JSON string, you MUST double-escape your LaTeX backslashes so the JSON parser doesn't break. 
+   - Write `\\frac{1}{2}` instead of `\frac{1}{2}`.
+   - Write `\\text{ kg}` instead of `\text{ kg}`.
+
+OUTPUT FORMAT:
 {
-    "text": "plain english text of the question",
-    "latex": "full latex representation of any math/equations (empty string if none)"
+    "text": "A complete, readable plain-text transcription. Use standard unicode for simple symbols (e.g., α, °, ×) and readable text equivalents for complex math (e.g., 'integral of x dx', 'sqrt(x)'). Do not use LaTeX formatting here.",
+    "latex": "The perfectly formatted string mixing standard English text and escaped LaTeX math mode as instructed above."
 }"""
             
             response = await self.openai_client.chat.completions.create(
@@ -157,7 +179,7 @@ Respond ONLY in JSON:
                         ]
                     }
                 ],
-                max_tokens=512,
+                max_tokens=1500,
                 temperature=0.0
             )
             
