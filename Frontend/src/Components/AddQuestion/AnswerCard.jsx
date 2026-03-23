@@ -9,22 +9,67 @@ const LABELS = ["A", "B", "C", "D"];
 const hasLatexSyntax = (text) =>
     text.includes("\\") || text.includes("^") || text.includes("_") || text.includes("frac");
 
+const fixLatex = (text) => {
+    if (!text) return text;
+    return text
+        // Fix common command typos
+        .replace(/\\fract\b/g,       "\\frac")
+        .replace(/\\episilon\b/g,    "\\epsilon")
+        .replace(/\\epsilion\b/g,    "\\epsilon")
+        .replace(/\\eplison\b/g,     "\\epsilon")
+        .replace(/\\thetaa\b/g,      "\\theta")
+        .replace(/\\aplha\b/g,       "\\alpha")
+        .replace(/\\alpa\b/g,        "\\alpha")
+        .replace(/\\lamda\b/g,       "\\lambda")
+        .replace(/\\lamba\b/g,       "\\lambda")
+        .replace(/\\time\b/g,        "\\times")
+        .replace(/\\infity\b/g,      "\\infty")
+        .replace(/\\infinti\b/g,     "\\infty")
+        .replace(/\\muu\b/g,         "\\mu")
+        .replace(/\\niu\b/g,         "\\nu")
+        .replace(/\\etaa\b/g,        "\\eta")
+        .replace(/\\tauu\b/g,        "\\tau")
+        .replace(/\\phii\b/g,        "\\phi")
+        .replace(/\\psii\b/g,        "\\psi")
+        .replace(/\\omegaa\b/g,      "\\omega")
+        .replace(/\\Omegaa\b/g,      "\\Omega")
+        .replace(/\\sigmaa\b/g,      "\\sigma")
+        .replace(/\\Sigmaa\b/g,      "\\Sigma")
+        .replace(/\\deltaa\b/g,      "\\delta")
+        .replace(/\\Deltaa\b/g,      "\\Delta")
+        .replace(/\\gammaa\b/g,      "\\gamma")
+        .replace(/\\Gammaa\b/g,      "\\Gamma")
+        .replace(/\\rho0\b/g,        "\\rho_0")
+        .replace(/\\pi0\b/g,         "\\pi_0")
+        // Fix \frac missing braces — \frac1{2} → \frac{1}{2}
+        .replace(/\\frac([^{])/g,    "\\frac{$1}")
+        // Fix double backslashes that aren't line breaks
+        .replace(/\\\\(?![\n\r])/g,  "\\")
+        // Fix $...$ wrapping that KaTeX doesn't need
+        .replace(/\$([^$]+)\$/g,     "$1")
+        // Remove stray dollar signs
+        .replace(/\$/g,              "")
+        .trim();
+};
+
 function LatexText({ text }) {
     if (!text) return null;
 
-    if (!hasLatexSyntax(text)) {
-        return <span className="text-[13px] text-slate-700">{text}</span>;
+    const cleaned = fixLatex(text);
+
+    if (!hasLatexSyntax(cleaned)) {
+        return <span className="text-[13px] text-slate-700">{cleaned}</span>;
     }
 
     try {
-        const html = katex.renderToString(text, {
+        const html = katex.renderToString(cleaned, {
             throwOnError: false,
             displayMode:  false,
             output:       "html",
         });
         return <span className="text-[13px] text-slate-700" dangerouslySetInnerHTML={{ __html: html }} />;
     } catch {
-        return <span className="text-[13px] text-slate-700">{text}</span>;
+        return <span className="text-[13px] text-slate-700">{cleaned}</span>;
     }
 }
 
@@ -37,7 +82,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
         D: useRef(null),
     };
 
-    // Track which options are in "edit mode" (showing raw input)
     const [editingLabels, setEditingLabels] = useState([]);
 
     const toggleEdit = (label) => {
@@ -71,13 +115,11 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
         });
     }, [prefillOptions, stripLabel]);
 
-    // Triggers when prefillOptions arrives — prefills if MCQ already selected
     useEffect(() => {
         if (!prefillOptions?.has_options) return;
         applyPrefill();
     }, [prefillOptions]);
 
-    // Triggers when user selects MCQ type — prefills if options already loaded
     useEffect(() => {
         if (answer?.type !== "mcq") return;
         if (!prefillOptions?.has_options) return;
@@ -177,8 +219,8 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                     </div>
 
                     {answer.options.map(option => {
-                        const isEditing  = editingLabels.includes(option.label);
-                        const isLatex    = option.text && hasLatexSyntax(option.text);
+                        const isEditing = editingLabels.includes(option.label);
+                        const isLatex   = option.text && hasLatexSyntax(option.text);
 
                         return (
                             <div key={option.label} className="flex flex-col gap-1.5">
@@ -189,8 +231,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                                     {/* Content area */}
                                     {!option.imagePreview && (
                                         <div className="flex-1 flex flex-col gap-1">
-
-                                            {/* LaTeX display mode — shows rendered, tap pencil to edit */}
                                             {isLatex && !isEditing ? (
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 min-h-[38px] flex items-center">
@@ -209,7 +249,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                /* Plain text or edit mode — show raw input */
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="text"
@@ -219,7 +258,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                                                         autoFocus={isEditing}
                                                         className="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[13px] text-slate-700 outline-none focus:border-blue-400 focus:bg-blue-50 transition-all"
                                                     />
-                                                    {/* Done button when editing LaTeX */}
                                                     {isEditing && (
                                                         <button
                                                             type="button"
@@ -252,7 +290,7 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                                         </div>
                                     )}
 
-                                    {/* Upload image button — only when not in edit mode */}
+                                    {/* Upload image button */}
                                     {!option.imagePreview && !isEditing && (
                                         <>
                                             <input
