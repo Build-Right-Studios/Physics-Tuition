@@ -134,39 +134,35 @@ class OpenAIClient:
             
         try:
             image_base64 = base64.b64encode(image_bytes).decode()
-            prompt = r"""You are an expert OCR engine for JEE/NEET physics and mathematics exam questions.
+            prompt = r"""This explains exactly why you got that messy output in your screenshot! Your original prompt was giving the AI a massive checklist of specific LaTeX commands, but it lacked the most crucial instruction: how to structure the document. Because the AI was heavily focused on formatting everything as math, it defaulted to throwing the entire paragraph into math mode and using \text{} as an escape hatch for English words. Furthermore, modern LLMs already know how to write a fraction or an integral; you don't need to waste prompt tokens teaching them basic syntax.
 
-Your task is to extract ALL text and mathematical content from the image with 100% accuracy.
+Here is an improved, robust version of your prompt that fixes the structural issues, prevents the \text{} abuse, and ensures proper JSON escaping.
 
-CRITICAL RULES for LaTeX extraction:
-- Use proper LaTeX for ALL mathematical symbols — never use plain text for math
-- Fractions: \frac{numerator}{denominator}
-- Integrals: \int_{lower}^{upper} expression \, dx
-- Derivatives: \frac{d}{dt}, \frac{d^2y}{dx^2}
-- Vectors: \vec{F}, \hat{r}, \mathbf{v}
-- Greek letters: \alpha, \beta, \gamma, \delta, \omega, \theta, \phi, \lambda, \mu, \sigma, \pi, \epsilon
-- Superscripts: x^{2}, e^{-t/\tau}
-- Subscripts: v_{0}, F_{net}, a_{x}
-- Square roots: \sqrt{x}, \sqrt[n]{x}
-- Absolute value: |x| or \left|x\right|
-- Summation: \sum_{i=1}^{n}
-- Products: \prod_{i=1}^{n}
-- Limits: \lim_{x \to 0}
-- Infinity: \infty
-- Partial derivatives: \frac{\partial f}{\partial x}
-- Cross product: \times
-- Dot product: \cdot
-- Proportional: \propto
-- Approximately: \approx
-- Units: write units in \text{} e.g. \text{m/s}, \text{kg}
-- Trigonometric: \sin, \cos, \tan, \sin^{-1}, etc.
-- Logarithms: \log, \ln
-- Matrices/determinants: use \begin{vmatrix}...\end{vmatrix}
+The Improved Prompt
+Plaintext
+You are an expert mathematical typesetter and OCR engine specializing in JEE/NEET physics and chemistry exam questions.
 
-OUTPUT FORMAT — return ONLY valid JSON, no markdown fences:
+Your task is to extract ALL text and mathematical content from the image with 100% accuracy and format it perfectly.
+
+CRITICAL STRUCTURAL RULES:
+1. Natural Mixing: Write standard English prose normally. ONLY use math mode (enclose in `$` for inline, or `$$` for display) for variables, numbers, formulas, and equations. 
+2. NO Global Math Mode: NEVER wrap an entire sentence or paragraph in math mode. 
+   - BAD: `\text{The mass of } A \text{ is } 5 \text{ kg}`
+   - GOOD: `The mass of $A$ is $5 \text{ kg}$`
+3. Units: Keep units inside the math mode with their corresponding values, using `\text{}` or `\mathrm{}` to prevent italicization (e.g., `$9.8 \text{ m/s}^2$`).
+4. Punctuation: Keep standard punctuation (commas, periods) OUTSIDE of math mode unless it is strictly part of the mathematical expression.
+5. Answer Options: Format multiple-choice options clearly, typically separated by newlines.
+
+CRITICAL JSON RULES:
+1. You must output ONLY valid JSON. No markdown formatting blocks (like ```json), no preamble, and no conversational text.
+2. Escape Characters: Because the output is a JSON string, you MUST double-escape your LaTeX backslashes so the JSON parser doesn't break. 
+   - Write `\\frac{1}{2}` instead of `\frac{1}{2}`.
+   - Write `\\text{ kg}` instead of `\text{ kg}`.
+
+OUTPUT FORMAT:
 {
-    "text": "complete plain-text transcription of the question including all answer options (A/B/C/D) — replace math symbols with readable equivalents like sqrt, integral, pi, etc.",
-    "latex": "complete LaTeX representation of the ENTIRE question including all equations and all answer options formatted with proper LaTeX commands"
+    "text": "A complete, readable plain-text transcription. Use standard unicode for simple symbols (e.g., α, °, ×) and readable text equivalents for complex math (e.g., 'integral of x dx', 'sqrt(x)'). Do not use LaTeX formatting here.",
+    "latex": "The perfectly formatted string mixing standard English text and escaped LaTeX math mode as instructed above."
 }"""
             
             response = await self.openai_client.chat.completions.create(
