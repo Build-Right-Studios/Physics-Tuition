@@ -8,6 +8,7 @@ import { BASE, QUESTIONS, RAG } from "../Constants/apiRoutes.js";
 import ResultPageHeader from "../Components/AddQuestion/ResultPageHeader";
 import NoMatchResult from "../Components/AddQuestion/NoMatchResult";
 import MatchResult from "../Components/AddQuestion/MatchResult";
+import LatexText from "../Components/Layout/LatexText.jsx";
 
 const BASE_URL = BASE.ROUTE;
 const RAG_URL = RAG.BASE;
@@ -53,11 +54,12 @@ export default function SimilarityResultPage() {
     const { formData, matches, matchCount, processedQuestion } = resolvedState;
     const extractedText = resolvedState?.extractedText || "";
     const diagramImage = state?.diagramImage || null;
-
-    // Extract prefill options from processedQuestion
     const prefillOptions = processedQuestion?.options || null;
-
     const hasMatches = matchCount > 0 && matches?.some(m => m.similarity_score > 0.5);
+
+    console.log("Extracted question text:", processedQuestion?.text);
+    console.log("Extracted question latex:", processedQuestion?.latex);
+    console.log("Extracted options:", processedQuestion?.options);
 
     const handleSaveQuestion = async () => {
         try {
@@ -132,6 +134,27 @@ export default function SimilarityResultPage() {
                     <ResultPageHeader onBack={() => navigate(-1)} />
 
                     <div className="flex flex-col gap-3.5 px-4 py-4 flex-1">
+
+                        {/* ── Question Preview ─────────────────────────────── */}
+                        <div className="bg-white rounded-2xl p-5 shadow-sm shadow-slate-100 border border-slate-100 flex flex-col gap-3">
+                            <div className="flex items-start gap-3 pb-3 border-b border-slate-100">
+                                <span className="text-blue-500 text-lg mt-0.5">👁️</span>
+                                <div>
+                                    <h2 className="text-[14.5px] font-semibold text-slate-800 tracking-tight" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                        Question Preview
+                                    </h2>
+                                    <p className="text-[12px] text-slate-400 mt-0.5">How it will appear to students.</p>
+                                </div>
+                            </div>
+                            <div className="text-[13.5px] text-slate-700 leading-relaxed break-words overflow-hidden">
+                                <LatexText
+                                    text={processedQuestion?.text || extractedText}  // ← use text not latex
+                                    className="text-[13.5px] text-slate-700 leading-relaxed"
+                                />
+                            </div>
+                        </div>
+                        {/* ───────────────────────────────────────────────────── */}
+
                         {!hasMatches ? (
                             <NoMatchResult
                                 formData={formData}

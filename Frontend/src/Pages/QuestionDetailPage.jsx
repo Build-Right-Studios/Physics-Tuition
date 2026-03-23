@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
@@ -6,23 +6,37 @@ import "react-toastify/dist/ReactToastify.css";
 import { BASE, QUESTIONS, RAG } from "../Constants/apiRoutes.js";
 import { TAG_TO_SOURCE } from "../Pages/SimilarityResultPage.jsx";
 
-import QuestionHeader      from "../Components/QuestionDetail/QuestionHeader.jsx";
-import StatementCard       from "../Components/QuestionDetail/StatementCard.jsx";
-import DiagramCard         from "../Components/QuestionDetail/DiagramCard.jsx";
-import ClassificationCard  from "../Components/QuestionDetail/ClassificationCard.jsx";
-import AppearancesCard     from "../Components/QuestionDetail/AppearancesCard.jsx";
-import AnswerCard          from "../Components/QuestionDetail/AnswerCard.jsx";
-import SpecialNoteCard     from "../Components/QuestionDetail/SpecialNoteCard.jsx";
+import QuestionHeader     from "../Components/QuestionDetail/QuestionHeader.jsx";
+import StatementCard      from "../Components/QuestionDetail/StatementCard.jsx";
+import DiagramCard        from "../Components/QuestionDetail/DiagramCard.jsx";
+import ClassificationCard from "../Components/QuestionDetail/ClassificationCard.jsx";
+import AppearancesCard    from "../Components/QuestionDetail/AppearancesCard.jsx";
+import AnswerCard         from "../Components/QuestionDetail/AnswerCard.jsx";
+import SpecialNoteCard    from "../Components/QuestionDetail/SpecialNoteCard.jsx";
 
 const BASE_URL = BASE.ROUTE;
 const RAG_URL  = RAG.BASE;
 
 export default function QuestionDetailPage() {
-    const { id }     = useParams();
-    const navigate   = useNavigate();
-    const { state }  = useLocation();
-    const question   = state?.question;
+    const { id }    = useParams();
+    const navigate  = useNavigate();
+    const { state } = useLocation();
+
+    const [question, setQuestion] = useState(state?.question || null);
     const [deleting, setDeleting] = useState(false);
+
+    // Fetch fresh data on mount using qdrantId from URL
+    useEffect(() => {
+        const fetchQuestion = async () => {
+            try {
+                const res = await axios.get(`${BASE_URL}${QUESTIONS.GET_BY_QID(id)}`);
+                if (res.data.success) setQuestion(res.data.data);
+            } catch {
+                // fallback to state if fetch fails
+            }
+        };
+        fetchQuestion();
+    }, [id]);
 
     if (!question) {
         navigate(-1);
@@ -44,10 +58,7 @@ export default function QuestionDetailPage() {
             const source  = TAG_TO_SOURCE[question.tags?.[0]] || "neet";
             const subject = question.subject?.toLowerCase();
 
-            // Step 1 — Delete from MongoDB
             await axios.delete(`${BASE_URL}${QUESTIONS.DELETE(question._id)}`);
-
-            // Step 2 — Delete from Qdrant via RAG
             await axios.delete(`${RAG_URL}${RAG.DELETE_QUESTION(question.qdrantId)}`, {
                 params: { source, subject },
             });

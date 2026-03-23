@@ -1,77 +1,10 @@
 // Components/AddQuestion/AnswerCard.jsx
 
 import { useRef, useEffect, useCallback, useState } from "react";
-import katex from "katex";
-import "katex/dist/katex.min.css";
+import { hasLatexSyntax } from "../../Constants/latex.js";
+import LatexText from "../Layout/LatexText.jsx";
 
 const LABELS = ["A", "B", "C", "D"];
-
-const hasLatexSyntax = (text) =>
-    text.includes("\\") || text.includes("^") || text.includes("_") || text.includes("frac");
-
-const fixLatex = (text) => {
-    if (!text) return text;
-    return text
-        // Fix common command typos
-        .replace(/\\fract\b/g,       "\\frac")
-        .replace(/\\episilon\b/g,    "\\epsilon")
-        .replace(/\\epsilion\b/g,    "\\epsilon")
-        .replace(/\\eplison\b/g,     "\\epsilon")
-        .replace(/\\thetaa\b/g,      "\\theta")
-        .replace(/\\aplha\b/g,       "\\alpha")
-        .replace(/\\alpa\b/g,        "\\alpha")
-        .replace(/\\lamda\b/g,       "\\lambda")
-        .replace(/\\lamba\b/g,       "\\lambda")
-        .replace(/\\time\b/g,        "\\times")
-        .replace(/\\infity\b/g,      "\\infty")
-        .replace(/\\infinti\b/g,     "\\infty")
-        .replace(/\\muu\b/g,         "\\mu")
-        .replace(/\\niu\b/g,         "\\nu")
-        .replace(/\\etaa\b/g,        "\\eta")
-        .replace(/\\tauu\b/g,        "\\tau")
-        .replace(/\\phii\b/g,        "\\phi")
-        .replace(/\\psii\b/g,        "\\psi")
-        .replace(/\\omegaa\b/g,      "\\omega")
-        .replace(/\\Omegaa\b/g,      "\\Omega")
-        .replace(/\\sigmaa\b/g,      "\\sigma")
-        .replace(/\\Sigmaa\b/g,      "\\Sigma")
-        .replace(/\\deltaa\b/g,      "\\delta")
-        .replace(/\\Deltaa\b/g,      "\\Delta")
-        .replace(/\\gammaa\b/g,      "\\gamma")
-        .replace(/\\Gammaa\b/g,      "\\Gamma")
-        .replace(/\\rho0\b/g,        "\\rho_0")
-        .replace(/\\pi0\b/g,         "\\pi_0")
-        // Fix \frac missing braces — \frac1{2} → \frac{1}{2}
-        .replace(/\\frac([^{])/g,    "\\frac{$1}")
-        // Fix double backslashes that aren't line breaks
-        .replace(/\\\\(?![\n\r])/g,  "\\")
-        // Fix $...$ wrapping that KaTeX doesn't need
-        .replace(/\$([^$]+)\$/g,     "$1")
-        // Remove stray dollar signs
-        .replace(/\$/g,              "")
-        .trim();
-};
-
-function LatexText({ text }) {
-    if (!text) return null;
-
-    const cleaned = fixLatex(text);
-
-    if (!hasLatexSyntax(cleaned)) {
-        return <span className="text-[13px] text-slate-700">{cleaned}</span>;
-    }
-
-    try {
-        const html = katex.renderToString(cleaned, {
-            throwOnError: false,
-            displayMode:  false,
-            output:       "html",
-        });
-        return <span className="text-[13px] text-slate-700" dangerouslySetInnerHTML={{ __html: html }} />;
-    } catch {
-        return <span className="text-[13px] text-slate-700">{cleaned}</span>;
-    }
-}
 
 export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
 
@@ -225,10 +158,8 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                         return (
                             <div key={option.label} className="flex flex-col gap-1.5">
                                 <div className="flex items-center gap-2">
-                                    {/* Label */}
                                     <span className="text-[12px] font-bold text-slate-500 w-4">{option.label}</span>
 
-                                    {/* Content area */}
                                     {!option.imagePreview && (
                                         <div className="flex-1 flex flex-col gap-1">
                                             {isLatex && !isEditing ? (
@@ -272,7 +203,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                                         </div>
                                     )}
 
-                                    {/* Image preview */}
                                     {option.imagePreview && (
                                         <div className="flex-1 relative">
                                             <img
@@ -290,7 +220,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                                         </div>
                                     )}
 
-                                    {/* Upload image button */}
                                     {!option.imagePreview && !isEditing && (
                                         <>
                                             <input
@@ -318,7 +247,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                         );
                     })}
 
-                    {/* Correct answer selector */}
                     <div className="flex flex-col gap-2 mt-1">
                         <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Correct Answer</label>
                         <div className="flex gap-2">
@@ -341,7 +269,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                 </div>
             )}
 
-            {/* Numerical Answer */}
             {answer?.type === "numerical" && (
                 <div className="flex flex-col gap-2">
                     <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Correct Answer</label>
@@ -355,7 +282,6 @@ export default function AnswerCard({ answer, setAnswer, prefillOptions }) {
                 </div>
             )}
 
-            {/* Solution */}
             {answer?.type && (
                 <div className="flex flex-col gap-2">
                     <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
