@@ -8,30 +8,37 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PROMPT = r"""You are an expert mathematical typesetter and OCR engine specializing in JEE/NEET physics and mathematics exam questions.
+prompt = """You are an expert physics and mathematics OCR engine. Extract ALL text and mathematical expressions from exam question images with perfect accuracy.
 
-Your task is to extract ALL text and mathematical content from the image with 100% accuracy and output it as structured data.
+FIELDS:
+- "text": verbatim extraction, unicode symbols allowed (×, μ, ε₀, 10⁻³). NO LaTeX.
+- "latex": all equations and given values in complete valid LaTeX.
 
-CRITICAL STRUCTURAL RULES (LaTeX Formulation):
-1. Natural Mixing: Write standard English prose normally. ONLY use math mode (enclose in `$` for inline, or `$$` for display) for variables, numbers, formulas, equations, and standalone symbols. 
-2. NO Global Math Mode: NEVER wrap an entire sentence or paragraph in math mode. Use math mode strictly for the mathematical elements.
-3. Units: Keep units inside the math mode with their corresponding values, but use `\mathrm{}` or `\text{}` to prevent them from being italicized (e.g., `$9.8 \mathrm{m/s}^2$`).
-4. Proper Macros: Always use proper LaTeX macros for operators and functions to ensure correct formatting (e.g., use `\sin`, `\ln`, `\lim`, `\int`, `\times`, `\sum` rather than plain text equivalents inside math mode).
-5. Vectors and Matrices: Use `\vec{}` or `\mathbf{}` for vectors. Use `\begin{vmatrix}...\end{vmatrix}` or `\begin{bmatrix}...\end{bmatrix}` for matrices and determinants.
+RULES:
+1. Extract every word exactly as written - do not paraphrase or summarize
+2. Preserve the original sentence structure and ordering  
+3. Never omit units, constants, or numeric values
+4. CRITICAL: Always complete LaTeX commands fully — never output partial or broken LaTeX like \\frac{1} without its second argument
+5. CRITICAL: Greek letters must be proper LaTeX: epsilon → \\varepsilon, pi → \\pi, mu → \\mu, theta → \\theta
+6. CRITICAL: Fractions must always be \\frac{numerator}{denominator} — both arguments required
+7. CRITICAL: Always use curly braces for exponents: 10^{-3} not 10^-3
 
-CRITICAL JSON RULES (Escaping):
-1. You must output ONLY valid JSON. Absolutely no markdown formatting blocks (like ```json), no preamble, and no conversational text.
-2. Double Escaping: Because the output is a JSON string, you MUST double-escape your LaTeX backslashes so the JSON parser doesn't break. 
-   - Write `\\frac{1}{2}` instead of `\frac{1}{2}`.
-   - Write `\\sin\\theta` instead of `\sin\theta`.
-   - Write `\\mathrm{kg}` instead of `\mathrm{kg}`.
+COMMON PATTERNS TO HANDLE CORRECTLY:
+- Coulomb's constant: \\frac{1}{4\\pi\\varepsilon_0} = 9 \\times 10^9\\,\\text{N m}^2\\text{C}^{-2}
+- Micro prefix: μC → \\mu\\text{C} in latex, μC in text
+- Negative exponents: 10⁻³ stays as 10⁻³ in text, becomes 10^{-3} in latex
+- Subscripts: q₀ stays as q₀ in text, becomes q_0 in latex
 
-OUTPUT FORMAT:
+EXAMPLE INPUT: (image showing)
+"Q1. As shown in the figure, two equal point charges (q₀ = +2 μC) are placed on an inclined plane. Mass of each charge is 20 g. For equilibrium height h = x × 10⁻³ m. Find x. (Take 1/4πε₀ = 9 × 10⁹ N m² C⁻², g = 10)"
+
+EXAMPLE OUTPUT:
 {
-    "text": "A complete, readable plain-text transcription of the question including all answer options. Replace math symbols with highly readable text equivalents (e.g., 'integral of x dx', 'sqrt(x)', 'pi', 'alpha'). Do not use LaTeX formatting here.",
-    "latex": "The perfectly formatted string mixing standard English text and properly double-escaped LaTeX math mode, including all equations and all answer options."
-}"""
+    "text": "Q1. As shown in the figure, two equal point charges (q₀ = +2 μC) are placed on an inclined plane. Mass of each charge is 20 g. For equilibrium height h = x × 10⁻³ m. Find x. (Take 1/4πε₀ = 9 × 10⁹ N m² C⁻², g = 10)",
+    "latex": "q_0 = +2\\,\\mu\\text{C},\\quad m = 20\\,\\text{g},\\quad h = x \\times 10^{-3}\\,\\text{m},\\quad \\frac{1}{4\\pi\\varepsilon_0} = 9 \\times 10^9\\,\\text{N\\,m}^2\\text{C}^{-2},\\quad g = 10\\,\\text{m/s}^2"
+}
 
+Respond ONLY in valid JSON with exactly two keys: "text" and "latex". No other keys. Double-check all LaTeX commands are complete and valid before responding."""
 
 class GroqOCRClient:
     """OCR backend for DEV mode """
@@ -53,7 +60,7 @@ class GroqOCRClient:
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": PROMPT},
+                            {"type": "text", "text": prompt},
                             {
                                 "type": "image_url",
                                 "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"},
