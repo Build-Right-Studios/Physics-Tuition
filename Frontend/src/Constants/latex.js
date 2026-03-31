@@ -4,6 +4,15 @@ import "katex/dist/katex.min.css";
 export const fixLatex = (text) => {
     if (!text) return text;
     return text
+        // ── Fix varepsilon ────────────────────────────────────────────────
+        .replace(/\\varepsilon_0/g,  "\\epsilon_0")
+        .replace(/\\varepsilon/g,    "\\epsilon")
+
+        // ── Fix double backslashes ────────────────────────────────────────
+        .replace(/\\\\,/g,           "\\,")
+        .replace(/\\\\(?![\n\r])/g,  "\\")
+
+        // ── Fix common typos ──────────────────────────────────────────────
         .replace(/\\fract\b/g,       "\\frac")
         .replace(/\\episilon\b/g,    "\\epsilon")
         .replace(/\\epsilion\b/g,    "\\epsilon")
@@ -30,23 +39,26 @@ export const fixLatex = (text) => {
         .replace(/\\Deltaa\b/g,      "\\Delta")
         .replace(/\\gammaa\b/g,      "\\gamma")
         .replace(/\\Gammaa\b/g,      "\\Gamma")
+
+        // ── Fix \frac missing braces ──────────────────────────────────────
         .replace(/\\frac([^{])/g,    "\\frac{$1}")
-        .replace(/\\\\(?![\n\r])/g,  "\\")
-        .replace(/\$([^$]+)\$/g,     "$1")
-        .replace(/\$/g,              "")
-        .replace(/(?<!\$)(\\[a-zA-Z]+\{[^}]*\}(?:\{[^}]*\})?)/g, "$$$1$$")
+
+        // ── Fix spacing ───────────────────────────────────────────────────
+        .replace(/\\quad/g,          " ")
+        .replace(/\\,/g,             " ")
         .trim();
 };
 
-export const hasLatexSyntax = (text) =>
-    text.includes("\\") || text.includes("^") || text.includes("_") || text.includes("frac");
+export const hasLatexSyntax = (text) => {
+    if (!text) return false;
+    return text.includes("\\") || text.includes("frac");
+};
 
-export const renderLatex = (text) => {
-    if (!text) return "";
-    const cleaned = fixLatex(text);
-    if (!hasLatexSyntax(cleaned)) return null; // null = render as plain text
+// Renders a single math string (no mixed text — pure LaTeX only)
+export const renderLatex = (math) => {
+    if (!math) return null;
     try {
-        return katex.renderToString(cleaned, {
+        return katex.renderToString(math, {
             throwOnError: false,
             displayMode:  false,
             output:       "html",

@@ -57,9 +57,51 @@ export default function SimilarityResultPage() {
     const prefillOptions = processedQuestion?.options || null;
     const hasMatches = matchCount > 0 && matches?.some(m => m.similarity_score > 0.5);
 
-    console.log("Extracted question text:", processedQuestion?.text);
-    console.log("Extracted question latex:", processedQuestion?.latex);
-    console.log("Extracted options:", processedQuestion?.options);
+    const getQuestionText = (processedQuestion) => {
+        const raw = processedQuestion?.text;
+        if (!raw) return "";
+
+        // If RAG returned text as a parsed object already
+        if (typeof raw === "object") return raw.text || "";
+
+        // If RAG returned text as a JSON string
+        if (typeof raw === "string" && raw.trim().startsWith("{")) {
+            try {
+                // Use a safe extraction — don't JSON.parse (backslashes break it)
+                const textMatch = raw.match(/"text"\s*:\s*"([^"]+)"/);
+                return textMatch ? textMatch[1] : raw;
+            } catch {
+                return raw;
+            }
+        }
+
+        return raw;
+    };
+
+    const getQuestionLatex = (processedQuestion) => {
+        const raw = processedQuestion?.text;
+        if (!raw) return "";
+
+        if (typeof raw === "object") return raw.latex || "";
+
+        if (typeof raw === "string" && raw.trim().startsWith("{")) {
+            const latexMatch = raw.match(/"latex"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+            return latexMatch ? latexMatch[1] : "";
+        }
+
+        return processedQuestion?.latex || "";
+    };
+
+    const displayText = getQuestionText(processedQuestion) || extractedText;
+    const displayLatex = getQuestionLatex(processedQuestion) || "";
+
+    console.log("Question text:", displayText);
+    console.log("Question latex:", displayLatex);
+
+
+    // console.log("Extracted question text:", processedQuestion?.text);
+    // console.log("Extracted question latex:", processedQuestion?.latex);
+    // console.log("Extracted options:", processedQuestion?.options);
 
     const handleSaveQuestion = async () => {
         try {
@@ -81,7 +123,7 @@ export default function SimilarityResultPage() {
             payload.append("tags", JSON.stringify(formData.tags));
             payload.append("appearances", JSON.stringify(formData.appearances));
             payload.append("specialNote", formData.specialNote);
-            payload.append("statement", extractedText);
+            payload.append("statement", displayText || extractedText);
             payload.append("qdrantId", qdrantRes.data.question_id);
             if (diagramImage) payload.append("diagramImage", diagramImage);
 
@@ -120,7 +162,7 @@ export default function SimilarityResultPage() {
         navigate(`/questions/edit/${q.question_id}`, {
             state: {
                 question: q,
-                incomingStatement: extractedText,
+                incomingStatement: displayText,
                 incomingDiagramImage: diagramImage,
             },
         });
@@ -148,7 +190,7 @@ export default function SimilarityResultPage() {
                             </div>
                             <div className="text-[13.5px] text-slate-700 leading-relaxed break-words overflow-hidden">
                                 <LatexText
-                                    text={processedQuestion?.text || extractedText}  // ← use text not latex
+                                    text={displayText || extractedText}  // ← use text not latex
                                     className="text-[13.5px] text-slate-700 leading-relaxed"
                                 />
                             </div>

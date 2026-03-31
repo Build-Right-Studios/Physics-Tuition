@@ -16,13 +16,13 @@ export const generateAssignmentService = async (userData) => {
         // Step 3 — Save to DB
         const assignment = await saveAssignmentInternal({
             cloudinaryPublicId: cloudinaryResult.public_id,
-            cloudinaryUrl:      cloudinaryResult.secure_url,
+            cloudinaryUrl:      cloudinaryResult.url,
             title:              title || `${chapter} Assignment`,
             grade, subject, chapter,
         });
 
         return {
-            pdfUrl:       cloudinaryResult.secure_url,
+            pdfUrl:       cloudinaryResult.url,
             assignmentId: assignment._id,
         };
     } catch (error) {

@@ -17,32 +17,42 @@ import AnswerCard from "../Components/AddQuestion/AnswerCard.jsx";
 const BASE_URL = BASE.ROUTE;
 
 export default function EditQuestionPage() {
-    const navigate  = useNavigate();
-    const { id }    = useParams();
+    const navigate = useNavigate();
+    const { id } = useParams();
     const { state } = useLocation();
 
-    const incomingStatement    = state?.incomingStatement    || null;
+    const getQuestionText = (raw) => {
+        if (!raw) return "";
+        if (typeof raw === "object") return raw.text || "";
+        if (typeof raw === "string" && raw.trim().startsWith("{")) {
+            const textMatch = raw.match(/"text"\s*:\s*"([^"]+)"/);
+            return textMatch ? textMatch[1] : raw;
+        }
+        return raw;
+    };
+
+    const incomingStatement    = getQuestionText(state?.incomingStatement) || null;
     const incomingDiagramImage = state?.incomingDiagramImage || null;
 
-    const [question,          setQuestion]          = useState(null);
-    const [form,              setForm]              = useState({
-        grade:       "",
-        subject:     "",
-        chapter:     "",
-        subTopic:    "",
-        difficulty:  "",
-        tags:        [],
+    const [question, setQuestion] = useState(null);
+    const [form, setForm] = useState({
+        grade: "",
+        subject: "",
+        chapter: "",
+        subTopic: "",
+        difficulty: "",
+        tags: [],
         specialNote: "",
         appearances: [],
     });
 
-    const [chapters,          setChapters]          = useState([]);
-    const [subTopics,         setSubTopics]         = useState([]);
-    const [fetching,          setFetching]          = useState(true);
-    const [loading,           setLoading]           = useState(false);
+    const [chapters, setChapters] = useState([]);
+    const [subTopics, setSubTopics] = useState([]);
+    const [fetching, setFetching] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [selectedStatement, setSelectedStatement] = useState("current");
-    const [selectedDiagram,   setSelectedDiagram]   = useState("current");
-    const [answer,            setAnswer]            = useState(null);
+    const [selectedDiagram, setSelectedDiagram] = useState("current");
+    const [answer, setAnswer] = useState(null);
 
     useEffect(() => {
         const fetchQuestion = async () => {
@@ -54,34 +64,34 @@ export default function EditQuestionPage() {
                     const q = res.data.data;
                     setQuestion(q);
                     setForm({
-                        grade:       q.grade          || "",
-                        subject:     q.subject        || "",
-                        chapter:     q.chapter?.name  || "",
-                        subTopic:    q.subTopic?.name || "",
-                        difficulty:  q.difficulty     || "",
-                        tags:        q.tags           || [],
-                        specialNote: q.specialNote    || "",
-                        appearances: q.appearances    || [],
+                        grade: q.grade || "",
+                        subject: q.subject || "",
+                        chapter: q.chapter?.name || "",
+                        subTopic: q.subTopic?.name || "",
+                        difficulty: q.difficulty || "",
+                        tags: q.tags || [],
+                        specialNote: q.specialNote || "",
+                        appearances: q.appearances || [],
                     });
 
                     // Pre-fill answer from existing question
                     if (q.answer) {
                         setAnswer({
-                            type:     q.answer.type    || "mcq",
-                            correct:  q.answer.correct || "",
+                            type: q.answer.type || "mcq",
+                            correct: q.answer.correct || "",
                             solution: q.answer.solution || "",
-                            options:  q.answer.options?.map(o => ({
-                                label:        o.label,
-                                text:         o.text         || "",
-                                imageUrl:     o.imageUrl     || null,
-                                imageFile:    null,
-                                imagePreview: o.imageUrl     || null,
+                            options: q.answer.options?.map(o => ({
+                                label: o.label,
+                                text: o.text || "",
+                                imageUrl: o.imageUrl || null,
+                                imageFile: null,
+                                imagePreview: o.imageUrl || null,
                             })) || [],
                         });
                     }
 
                     if (q.grade && q.subject) await fetchChapters(q.grade, q.subject);
-                    if (q.chapter?.name)      await fetchSubTopics(q.chapter.name);
+                    if (q.chapter?.name) await fetchSubTopics(q.chapter.name);
                 }
             } catch (err) {
                 toast.error("Failed to fetch question.");
@@ -114,7 +124,7 @@ export default function EditQuestionPage() {
     };
 
     const handleSave = async () => {
-        if (!form.difficulty)       return toast.error("Please select difficulty");
+        if (!form.difficulty) return toast.error("Please select difficulty");
         if (form.tags.length === 0) return toast.error("Please select at least one exam tag");
 
         try {
@@ -125,15 +135,15 @@ export default function EditQuestionPage() {
                 : question?.statement;
 
             const payload = new FormData();
-            payload.append("grade",       form.grade);
-            payload.append("subject",     form.subject);
-            payload.append("chapter",     form.chapter);
-            payload.append("subTopic",    form.subTopic);
-            payload.append("difficulty",  form.difficulty);
-            payload.append("tags",        JSON.stringify(form.tags));
+            payload.append("grade", form.grade);
+            payload.append("subject", form.subject);
+            payload.append("chapter", form.chapter);
+            payload.append("subTopic", form.subTopic);
+            payload.append("difficulty", form.difficulty);
+            payload.append("tags", JSON.stringify(form.tags));
             payload.append("appearances", JSON.stringify(form.appearances));
             payload.append("specialNote", form.specialNote);
-            payload.append("statement",   finalStatement);
+            payload.append("statement", finalStatement);
 
             if (selectedDiagram === "incoming" && incomingDiagramImage) {
                 payload.append("diagramImage", incomingDiagramImage);

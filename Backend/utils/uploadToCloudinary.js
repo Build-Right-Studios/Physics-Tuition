@@ -16,7 +16,10 @@ export const uploadToCloudinary = async (filePath, folder, resourceType = "image
             resource_type: resourceType,
         });
         fs.unlinkSync(filePath);
-        return result;
+        return {
+            url: result.secure_url,
+            public_id: result.public_id,
+        };
     } catch (error) {
         console.error("Cloudinary upload error:", error);
         throw { status: 500, message: "Failed to upload file." };
